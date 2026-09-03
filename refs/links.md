@@ -2,6 +2,15 @@
 
 Collected 2026-09-02. Prefer these over memory.
 
+## Context (200k / 1M)
+
+- Native window: `max_position_embeddings` 1048576 in `zai-org/GLM-5.3-Flash` config.json
+- Writeup: [`context.md`](context.md)
+- 0xSero 4× / 1M / NVFP4: https://github.com/0xSero/glm-5.3-flash-sglang-sm120
+- rtx6kpro 4× / 262k (200k class): https://github.com/local-inference-lab/rtx6kpro/blob/master/models/glm-5.3-flash.md
+- vLLM TP=2 ~185k fp8 pool: https://github.com/vllm-project/vllm/issues/53963
+- samuelcardillo 2× EXL3 1M (not our checkpoint): https://github.com/samuelcardillo/glm-5.3-flash-2x-rtx-pro-6000-blackwell
+
 ## Speed
 
 - LocalMaxxing model + ceiling run: https://www.localmaxxing.com/en/models/zai-org/GLM-5.3-Flash?run=cmtk0maew03mrp701oyaivvka
@@ -33,13 +42,16 @@ Collected 2026-09-02. Prefer these over memory.
 - drowzeys keys splice: https://huggingface.co/drowzeys/keys-GLM-5.3-Flash-NVFP4-ablit-l15-45-anchorstock
 - NOT Flash (753B): https://huggingface.co/dealignai/GLM-5.3-ABLITERATED-NVFP4
 
-## Privacy / Runpod / Tailscale
+## Privacy / Runpod / Tailscale / confidential computing
 
 - Runpod security: https://docs.runpod.io/references/security-and-compliance
-- Runpod storage (encryption limits): https://docs.runpod.io/pods/storage/types
+- Runpod storage (encrypted volume disk, no BYOK, network-volume limit): https://docs.runpod.io/pods/storage/types#encrypted-volumes
+- Runpod data-security guide (broad platform encryption claim): https://www.runpod.io/articles/guides/keep-data-secure-cloud-gpus
 - Runpod expose ports / proxy: https://docs.runpod.io/pods/configuration/expose-ports
 - Runpod global networking: https://docs.runpod.io/pods/networking
-- Runpod "keep data secure" article: https://www.runpod.io/articles/guides/keep-data-secure-cloud-gpus
+- NVIDIA confidential-computing reference (RTX PRO 6000 BSE validation): https://docs.nvidia.com/enterprise-reference-architectures/deploying-proprietary-models-confidential-compute-self-hosted-vms/latest/reference-implementations.html
+- NVIDIA confidential-computing required capabilities: https://docs.nvidia.com/enterprise-reference-architectures/deploying-proprietary-models-confidential-compute-self-hosted-vms/latest/required-capabilities.html
+- NVIDIA attestation and key-release flow: https://docs.nvidia.com/enterprise-reference-architectures/deploying-proprietary-models-confidential-compute-self-hosted-vms/latest/attestation-and-key-release-flow.html
 - No TUN / NET_ADMIN: https://github.com/runpod/runpodctl/issues/272
 - Discord archive (Tailscale on pod): https://www.answeroverflow.com/m/1232985784189976667
 - Userspace Tailscale: https://tailscale.com/kb/1112/userspace-networking

@@ -1,6 +1,6 @@
 # Cost guard
 
-A 2× RTX PRO 6000 or 4× H200 pod bills by the second while running. The network volume bills monthly whether or not a pod is up.
+A 2× RTX PRO 6000 (config A, 200k), 4× RTX PRO 6000 (config B, 1M), or 4× H200 pod bills by the second while running. 4× is roughly 2× the GPU bill of 2× — do not create B for a single 200k stream. The network volume bills monthly whether or not a pod is up.
 
 Rules:
 

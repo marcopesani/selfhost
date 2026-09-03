@@ -2,6 +2,49 @@
 
 Append-only. Newest first. Reverse a decision by adding a new ADR that supersedes the old one.
 
+## ADR-014 — Disk encryption does not make ordinary Runpod provider-blind
+
+**Date:** 2026-09-03
+**Status:** accepted
+**Qualifies:** ADR-006, ADR-011, and ADR-012
+
+The hard privacy requirement is that Runpod, its host operator, or someone with privileged access to the rented hardware must not be able to read prompts, completions, model weights, or keys.
+
+Runpod’s storage documentation says:
+
+- **Volume disk** can use the console’s encrypted-volume option, but Runpod stores the key, the key cannot be retrieved, and BYOK is unsupported.
+- **Container disk and network volumes** cannot use that encrypted-volume feature.
+- Runpod’s security controls and host-access policy are valuable isolation and governance controls, not a cryptographic guarantee against a privileged host operator.
+
+Disk or file encryption protects data while it is cold. Inference necessarily puts plaintext and a decryption key into guest memory and GPU memory. An ordinary pod therefore cannot satisfy the hard requirement, even if we encrypt the model before upload or select Runpod’s encrypted volume disk. SSH, Tailscale, loopback binding, and disabled logs protect the request path and reduce accidental retention; they do not protect runtime memory from the host.
+
+**Decision:** do not call an ordinary Runpod Secure Cloud pod private from Runpod. Before provisioning, choose one of:
+
+1. **Provider-trusted mode:** explicitly accept Runpod as trusted for runtime plaintext. If cold-storage defense-in-depth is desired, use an encrypted **volume disk** rather than a network volume, accept Runpod-managed keys, and never put prompts in logs.
+2. **Provider-blind mode:** require a documented confidential-computing deployment with a CPU TEE (SEV-SNP or TDX), NVIDIA GPU confidential computing with protected VRAM/PCIe, fresh remote attestation, and customer-controlled or attestation-gated KMS key release.
+3. **Own the hardware:** operate the host and storage ourselves.
+
+NVIDIA documents a self-hosted RTX PRO 6000 Blackwell Server Edition validation using AMD SEV-SNP, GPU confidential computing, attestation, and model-key release. That proves the hardware class can participate in such a design, not that Runpod provides the complete service. Until Runpod confirms the exact GPU, data center, VM, attestation, and key-release path, **do not provision a standard pod under the provider-blind requirement**.
+
+## ADR-013 — Serve at 200k or 1M only; pick the SKU to match
+
+**Date:** 2026-09-03
+**Status:** accepted
+**Supersedes:** the 8k/64k pool in the ADR-004 recipe; 2× as the default SKU when the window is 1M
+
+GLM-5.3-Flash’s native window is **1,048,576**. 8k / 32k / 64k are not serve targets. LocalMaxxing 300–1004 tok/s is ctx=8192 and is not the SLA.
+
+Two legal configs (math in [`refs/context.md`](refs/context.md)):
+
+| | Window | GPUs | KV | Spec at boot |
+| --- | --- | --- | --- | --- |
+| **A (cost)** | `--context-length 204800` | **2×** RTX PRO 6000 | bf16 | DFLASH2 k=8 |
+| **B (native)** | `--context-length 1048576` | **4×** RTX PRO 6000 | bf16 | NEXTN/MTP, then DFLASH |
+
+Do not provision 2× for 1M. Do not provision 4× for a single 200k stream (leftover VRAM is concurrency, not speed). Hopper fallback stays 4× H200 at the same two windows.
+
+Pick A or B **before** `pod create`. Default if unspecified: **B** (native window). 200k on 2× is expected to fit (~185 GB of 192) but has no published NVFP4 boot log.
+
 ## ADR-012 — API only via `ssh -L`; ACL :22; no Serve / SOCKS / Funnel
 
 **Date:** 2026-09-02

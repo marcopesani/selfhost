@@ -43,7 +43,7 @@ Ranked. Do these in order.
 
 1. **Right GPU generation.** Hopper (H100/H200) wants **native FP8**. Blackwell workstation (RTX PRO 6000, SM120) wants **NVFP4 + flashinfer_cutlass** (not CuteDSL — CuteDSL hard-codes sm100). Ampere is a non-starter.
 2. **Speculative decoding.** DFLASH2 (block diffusion, `incoai/GLM-5.3-Flash-DFlash2`) is the only stack that has broken 300+ tok/s on this model. NEXTN/MTP is the reliable ~1.3–2× (163→211, or 143→208). No spec = ~160.
-3. **Tensor parallel width vs interconnect.** 2× 96 GB is enough for NVFP4 (~180–190 GiB weights + KV). 4× helps KV/context and some MTP setups; it does not automatically 2× decode. The ceiling run is TP=2.
+3. **Tensor parallel width vs window.** 2× 96 GB holds NVFP4 + **200k** bf16 KV (~185 GB of 192). **1M needs 4×** (bf16 1M overshoots 2×; fp8 1M on 2× is a 2 GB cliff, unproven). 4× does not 2× decode. See [`context.md`](context.md).
 4. **SM120 kernel flags** ([sglang#37105](https://github.com/sgl-project/sglang/issues/37105)). Without these, SGLang dies on RTX PRO 6000:
    - `SGLANG_OPT_DEEPGEMM_HC_PRENORM=0`
    - `--dsa-prefill-backend tilelang --dsa-decode-backend tilelang`
@@ -63,13 +63,17 @@ Ranked. Do these in order.
 
 ## Runpod-realistic recipes
 
-### Speed track — SGLang on 2× or 4× RTX PRO 6000
+### Speed track — SGLang on 2× (200k) or 4× (1M) RTX PRO 6000
 
 Image: `lmsysorg/sglang:glm-5.3-flash` (pin a digest; 0xSero used `sha256:3a97bd50034ca60c6e6c86b8e36a73675d261f6a5eb71197796aee5175409290`).
 
-Weights: `dealignai/GLM-5.3-Flash-UNCENSORED-NVFP4` (pin this id; ABLITERATED twin may lag). Draft: `incoai/GLM-5.3-Flash-DFlash2` (**CC BY-NC-ND**; pin commit `7d74cdd` — later Hub weights lost ~6% prose).
+Weights: `dealignai/GLM-5.3-Flash-UNCENSORED-NVFP4` (pin this id; ABLITERATED twin may lag). Draft: `incoai/GLM-5.3-Flash-DFlash2` (**CC BY-NC-ND**; pin commit `7d74cdd` — later Hub weights lost ~6% prose). 2.34 GB — cheap next to 182 GB of target weights.
 
-Start DFLASH at **native block 8**. Widen 8 → 12 → 20 only after a real completion. Do not start at 64.
+On 4×/1M, start DFLASH only after MTP serves. On 2×/200k, start DFLASH at **native block 8**. Widen 8 → 12 → 20 only after a real completion. Do not start at 64.
+
+Context is **200k or 1M only** (ADR-013). Do not launch with an 8k/64k pool. Window math, VRAM, and in-band numbers: [`context.md`](context.md).
+
+**Config B (default) — 1M on 4×.** Boot MTP first. Add DFLASH2 k=8 after a completion.
 
 ```bash
 export SGLANG_OPT_DEEPGEMM_HC_PRENORM=0
@@ -81,25 +85,38 @@ python3 -m sglang.launch_server \
   --served-model-name glm-5.3-flash \
   --host 127.0.0.1 --port 8000 \
   --api-key "$GLM_API_KEY" \
-  --tp-size 2 \
+  --tp-size 4 \
   --quantization modelopt_fp4 \
   --attention-backend dsa \
   --dsa-prefill-backend tilelang \
   --dsa-decode-backend tilelang \
   --moe-runner-backend flashinfer_cutlass \
   --kv-cache-dtype bfloat16 \
+  --mem-fraction-static 0.85 \
   --disable-shared-experts-fusion \
   --reasoning-parser glm45 \
   --tool-call-parser glm47 \
+  --speculative-algorithm NEXTN \
+  --speculative-num-steps 5 \
+  --speculative-eagle-topk 1 \
+  --speculative-num-draft-tokens 6 \
+  --context-length 1048576 \
+  --max-total-tokens 1048576 \
+  --trust-remote-code
+```
+
+**Config A — 200k on 2×.** Same command with `--tp-size 2`, `--context-length 204800`, `--max-total-tokens 204800`, no `--mem-fraction-static` unless OOM, and DFLASH instead of NEXTN:
+
+```text
   --speculative-algorithm DFLASH \
   --speculative-draft-model-path /workspace/models/GLM-5.3-Flash-DFlash2 \
   --speculative-num-draft-tokens 8 \
   --speculative-draft-window-size 2048 \
-  --max-total-tokens 65536 \
-  --trust-remote-code
 ```
 
-If DFLASH2 fails to boot (image may lack [sglang#36708](https://github.com/sgl-project/sglang/pull/36708)): use NEXTN/MTP — 0xSero’s 143/208 path (`NEXTN`, 5 steps, 6 draft tokens). Their `flashinfer_sparse_mla` + FP8 KV only works with six baked patches; on stock image keep TileLang + bf16 KV.
+Fall back to the NEXTN flags from config B if the 200k pool will not allocate.
+
+If DFLASH2 fails to boot (image may lack [sglang#36708](https://github.com/sgl-project/sglang/pull/36708)): stay on NEXTN/MTP — 0xSero’s 208 path at 1M configured. Their `flashinfer_sparse_mla` + FP8 KV only works with six baked patches; on stock image keep TileLang + bf16 KV. 4× has enough leftover that we do **not** need fp8 KV to hold 1M.
 
 Do **not** serve this NVFP4 on vLLM on SM120 — [vllm#54150](https://github.com/vllm-project/vllm/issues/54150) ModelOpt U+FFFD corruption. SGLang is the speed-track engine.
 
@@ -111,18 +128,21 @@ Image: `vllm/vllm-openai:glm53-flash`. Weights: `dealignai/GLM-5.3-Flash-UNCENSO
 vllm serve /workspace/models/GLM-5.3-Flash-UNCENSORED-FP8 \
   --host 127.0.0.1 --port 8000 \
   --tensor-parallel-size 4 \
+  --max-model-len 1048576 \
   --tool-call-parser glm47 --reasoning-parser glm45 --enable-auto-tool-choice \
   --speculative-config '{"method":"mtp","num_speculative_tokens":1}'
 ```
 
-Expect ~160–210 tok/s single stream. Hopper does **not** support FP8 KV for this model (vLLM recipe). FlashInfer ≥ 0.6.18.
+For config A use `--max-model-len 204800`. Expect ~160–210 tok/s single stream on short prompts; long-ctx decode is unmeasured on Hopper. Hopper does **not** support FP8 KV for this model (vLLM recipe). FlashInfer ≥ 0.6.18.
 
 ## Honest target for this project
 
-| Label | tok/s | Meaning |
-| --- | ---: | --- |
-| Floor | 150–190 | vLLM on 2× RTX PRO 6000 if SGLang will not boot |
-| Good | 200–270 | NEXTN/MTP (0xSero 208; rtx6kpro MTP3 267 on 4×) |
-| Great | **300–391** | DFLASH2 k=8 on real prompts, no clock lock (their own steady-state) |
-| Inflated | 443–514 | Same stack, **best-of-N** |
-| Ceiling | 808–1004 | n-gram / attractor / clock lock — do not claim |
+8k DFLASH bands stay as a **ceiling reference**, not the serve SLA. In-band (200k/1M) we only have MTP 208 on 4× and EXL3 ~150 on 2×.
+
+| Label | tok/s | Window | Meaning |
+| --- | ---: | --- | --- |
+| In-band floor | ~140–154 | 229k–353k | 2× EXL3 analog (not our NVFP4) |
+| In-band published | **208** | 1M configured | 4× NVFP4 NEXTN MTP5 (0xSero) |
+| 8k great (out of band) | 300–391 | 8k | DFLASH2 k=8 steady-state — do not quote as 200k/1M |
+| Inflated | 443–514 | 8k | best-of-N |
+| Ceiling | 808–1004 | 8k | attractor / clock lock — do not claim |
