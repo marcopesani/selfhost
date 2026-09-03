@@ -1,10 +1,10 @@
 # Status
 
-Last updated: 2026-09-03 (context clamped; provider-blind encryption researched; no pod yet)
+Last updated: 2026-09-03 (pod UX design sitting: agent access / observability / in-pod pi researched; no pod yet)
 
 ## One-liner
 
-Reference repo is populated. **No Runpod resources exist.** The new hard privacy requirement is not met by an ordinary Runpod pod; verify confidential computing or explicitly accept provider trust before provisioning. Do not provision an 8k/64k pool.
+Reference repo is populated. **No Runpod resources exist.** The new hard privacy requirement is not met by an ordinary Runpod pod; verify confidential computing or explicitly accept provider trust before provisioning. Do not provision an 8k/64k pool. **New: UX design for agent access, observability, and the in-pod pi harness is done — see [`sessions/2026-09-03-pod-ux.md`](sessions/2026-09-03-pod-ux.md) and the design canvas.**
 
 ## Research conclusions
 
@@ -15,7 +15,7 @@ Reference repo is populated. **No Runpod resources exist.** The new hard privacy
 | Weights | **`dealignai/GLM-5.3-Flash-UNCENSORED-NVFP4`** (not rbinrs, not mixed with ABLITERATED twin) + `incoai/GLM-5.3-Flash-DFlash2` @ `7d74cdd`. `reasoning_effort=max`. |
 | Privacy | SSH/Tailscale/no-proxy controls protect traffic, not a privileged host. Runpod volume-disk encryption is provider-managed/no-BYOK; network volumes cannot use that feature. Provider-blind mode needs CPU/GPU confidential computing, attestation, and gated key release. ADR-014. |
 
-Full writeups: [`refs/context.md`](refs/context.md), [`refs/speed.md`](refs/speed.md), [`refs/abliterated.md`](refs/abliterated.md), [`refs/privacy.md`](refs/privacy.md). Canvases: research comparison + 200k/1M VRAM beside chat.
+Full writeups: [`refs/context.md`](refs/context.md), [`refs/speed.md`](refs/speed.md), [`refs/abliterated.md`](refs/abliterated.md), [`refs/privacy.md`](refs/privacy.md). Canvases: research comparison + 200k/1M VRAM beside chat. **Pod UX design (2026-09-03)**: one SSH tunnel carries the API (SGLang natively serves OpenAI chat-completions, Responses, and Anthropic Messages wire formats — no adapter) and VictoriaMetrics/vmui observability; pi in tmux is the in-pod chat harness; `/get_server_info` leaks the api key (CVE-2026-15977) — never scrape it; details in [`sessions/2026-09-03-pod-ux.md`](sessions/2026-09-03-pod-ux.md).
 
 ## Live resources
 
@@ -23,6 +23,7 @@ None. See [`runpod/inventory.md`](runpod/inventory.md).
 
 ## Blocked on
 
+- UX picks from the 2026-09-03 pod-UX sitting are made: **pi (Earendil) primary on laptop + pod, full tools; vmui-only observability**. ADR-015 to be written before/at provisioning.
 - Confirming whether Runpod offers provider-blind confidential VM/GPU, fresh attestation, and attestation-gated key release for the exact SKU/DC; public docs do not establish it.
 - If not, choosing a provider-trusted downgrade or moving to owned/confidential-compute hardware.
 - Choosing config **A** (2× / 200k) vs **B** (4× / 1M). Default if unspecified: **B**.
@@ -45,3 +46,4 @@ None of ours. Ceiling reference (8k, out of band): LocalMaxxing `cmtk0maew03mrp7
 6. If provider-trusted mode: choose encrypted volume disk for cold-storage defense in depth; do not use a network volume when customer-visible disk encryption is required.
 7. SSH-only pod, no HTTP ports; pull weights; Jupyter off; SGLang on `127.0.0.1`; tunnel with `ssh -L`.
 8. Measure a **long** prompt in-band; write `logs/` + a row in `refs/benchmark.md`.
+9. Boot SGLang with `--enable-metrics --enable-mfu-metrics`; raise TTFT/E2E histogram buckets above the stock 30 s (long-prefill p99 pegs at +Inf otherwise). First-sitting smoke tests: multi-tool agentic session (sglang#36669 thinking-degeneration risk), Codex tool calls on `/v1/responses`, pi tool-call streaming via the glm47 parser.
