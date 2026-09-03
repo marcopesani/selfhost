@@ -2,6 +2,54 @@
 
 Append-only. Newest first. Reverse a decision by adding a new ADR that supersedes the old one.
 
+## ADR-018 — Config B is binding: 1M native window on 4× RTX PRO 6000
+
+**Date:** 2026-09-04
+**Status:** accepted
+**Supersedes:** the "default if unspecified" escape in ADR-013
+
+The A-or-B choice from ADR-013 is now **B**: `--context-length 1048576`, **4× RTX PRO 6000**, bf16 KV, NEXTN/MTP at boot then DFLASH2. Hopper fallback stays **4× H200** at the same 1M window if Secure Cloud has no 4× RTX PRO 6000.
+
+Reminders codified: do not provision 2× for 1M, and do not buy 4× for a single 200k stream (leftover VRAM is concurrency, not speed). Reference band: 208 tok/s in-band (0xSero, NVFP4 MTP) at 1M configured.
+
+## ADR-017 — Weights store is an encrypted volume disk
+
+**Date:** 2026-09-04
+**Status:** accepted
+**Supersedes:** ADR-006 for the primary weights store
+
+Weights live on an **encrypted volume disk** (≈400 GB, `Encrypt volume` at creation), attached at `/workspace`. Encryption key is Runpod-managed, no BYOK — accepted as **cold-storage defense in depth** only; runtime plaintext remains provider-trusted (ADR-016). No network volume (cannot use the encrypted-volume feature).
+
+Consequences baked in:
+
+- **Volume disk is pod-scoped.** Retained across stop/start of the pod lease; **deleting the pod deletes the weights.** Between sittings: stop the pod, never delete it.
+- `HF_HUB_OFFLINE=1` after the first pull; weights are served from the volume, never re-downloaded.
+- Not a High-Performance tier claim; that tier was tied to the ADR-006 network volume.
+
+## ADR-016 — Provider-trusted mode accepted for now
+
+**Date:** 2026-09-04
+**Status:** accepted
+**Qualifies:** ADR-014 (path 1)
+
+ADR-014 path 1 is chosen: **provider-trusted**. We explicitly accept that Runpod, the host operator, or anyone with privileged access to the rented hardware could read runtime plaintext — prompts, completions, weights, and keys in guest/GPU memory. All traffic controls stay: Secure Cloud, Jupyter off, no HTTP ports, SGLang on `127.0.0.1`, bearer required, Tailscale ACL `:22` only, no proxy/SOCKS/Serve/Funnel, no prompt logging, `HF_HUB_OFFLINE=1` after the first pull.
+
+Two standing rails:
+
+- **Do not call this pod provider-blind.** The hard confidentiality requirement is not met by an ordinary pod; that is now an accepted residual, not a solved problem.
+- If the privacy posture hardens later, provider-blind (CPU TEE + GPU CC + fresh attestation + attestation-gated key release) or owned hardware is the un-blocked path; **re-evaluate before uploading any data we cannot expose.**
+
+## ADR-015 — Agent access: SGLang native tri-format, pi primary, vmui-only observability
+
+**Date:** 2026-09-04 (decided in the 2026-09-03 pod-UX sitting)
+**Status:** accepted
+
+- **Wire:** SGLang natively serves `/v1/chat/completions`, `/v1/responses`, and `/v1/messages` (Anthropic). **No adapter** — no LiteLLM or proxy holds plaintext on the laptop.
+- **Primary agent: pi** (`@earendil-works/pi-coding-agent`, repo `earendil-works/pi`, MIT, v0.84.x), on the laptop AND in the pod with an identical `~/.pi/agent/models.json` (`baseUrl http://127.0.0.1:8000/v1`, `contextWindow 1048576`, `compat.supportsDeveloperRole: false`; not `@mariozechner/pi`). Full tools; `PI_OFFLINE=1`; `GLM_API_KEY` is the one env var. Pod instance runs in tmux and talks only to `127.0.0.1:8000`.
+- **Observability: VictoriaMetrics vmui only** (no Grafana binary) on `:8428`, loopback; `nvidia_gpu_exporter` + `node_exporter` stay scrape-only in-pod. Boot SGLang with `--enable-metrics --enable-mfu-metrics`; raise TTFT/E2E histogram buckets above the stock 30 s for long prefills.
+- **One tunnel:** `ssh -L 8000 + 8428` over Tailscale `:22` (ADR-012).
+- **Security:** never scrape `/get_server_info` (CVE-2026-15977 echoes the API key); `/workspace/logs` mode 700 with size-capped rotation; optional distinct `--admin-api-key`; `/metrics` bypasses bearer by design (ok only because loopback). First-sitting smoke test for the sglang#36669 thinking-degeneration risk; temperature ≥ ~1 for tool calls.
+
 ## ADR-014 — Disk encryption does not make ordinary Runpod provider-blind
 
 **Date:** 2026-09-03

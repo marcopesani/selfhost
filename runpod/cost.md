@@ -8,3 +8,10 @@ Rules:
 - End of sitting: stop or delete the pod. Keep the volume.
 - Do not set serverless `workers-min 1` (we are not using serverless).
 - Confirm GPU hourly rate from `runpodctl gpu list` before create; do not guess.
+
+Provenance (2026-09-04, `runpodctl gpu list` live, config B binding per ADR-018):
+
+- RTX PRO 6000, Secure Cloud: **$2.09/GPU-hr → $8.36/hr for 4×** (~$67/8h sitting, ~$200/24h).
+- RTX PRO 6000 WK: $2.19/GPU-hr → $8.76/4×.
+- H200 SXM fallback: $4.59/GPU-hr → **$18.36/4×** — more than 2×; prefer 4× RTX PRO 6000.
+- **Storage bills even idle**: per ADR-017 the weights store is an **encrypted volume disk**, which is pod-scoped. The **network volume bills monthly whether or not a pod is up** — do not use it here. A stopped pod still rents the volume disk while the lease lives; deleting the pod deletes the disk and weights.
