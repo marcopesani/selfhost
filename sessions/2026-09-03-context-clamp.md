@@ -6,7 +6,7 @@ Drop 8k/32k/64k from the plan. Re-run the hardware/speed analysis at **200k** an
 
 ## What I did
 
-Sized KV from the hybrid architecture (34 KDA O(1) + 11 sparse MLA layers, `kv_lora_rank=512`) and 0xSero’s 7.4 KB/token fp8 pool. Compared that to LocalMaxxing 2× NVFP4 peaks (182–188 GB of 192 at ctx=8192). Wrote [`refs/context.md`](../refs/context.md), ADR-013, recipes, STATUS, AGENTS, README. Canvas beside chat.
+Sized KV from the hybrid architecture (34 KDA O(1) + 11 sparse MLA layers, `kv_lora_rank=512`) and 0xSero’s **7.4 KB/token/rank** fp8 pool. TP width must be included in total VRAM: 2×/200k is a tight ~188 GB estimate; 2×/1M does not fit; 4×/1M has ample headroom. Compared that to LocalMaxxing 2× NVFP4 peaks (182–188 GB of 192 at ctx=8192). Wrote [`refs/context.md`](../refs/context.md), ADR-013, recipes, STATUS, AGENTS, README. Canvas beside chat.
 
 ## What I measured
 

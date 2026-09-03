@@ -35,7 +35,7 @@ Every sitting that changes state must:
 
 Volume first, then compute in that same data center. Never the reverse.
 
-```
+```text
 verify provider-blind support or explicitly record provider-trusted mode
 → pick A (2× / 200k) or B (4× / 1M; default)
 → pick DC with that SKU on Secure Cloud
@@ -59,10 +59,11 @@ Realistic bands to expect:
 | --- | --- | --- |
 | ~140–154 tok/s | 229k–353k | 2× EXL3 analog (not our NVFP4). Honest 2× long-ctx floor |
 | **208 tok/s** | 1M configured | 4× NVFP4 NEXTN MTP5 (0xSero). In-band published |
-| ~160–210 tok/s | unspecified | dealignai FP8 + MTP on 4× H200, short-prompt |
-| **~300–391 tok/s** | **8k — out of band** | DFLASH2 k=8 steady-state. Do not quote as 200k/1M |
-| ~443–514 tok/s | 8k | same stack, **best-of-N** — do not report as SLA |
-| ~800–1004 tok/s | 8k | only if DFLASH2 + n-gram attractor reproduces |
+| ~160–210 tok/s | 200k/1M unknown | dealignai FP8 + MTP on 4× H200; short-prompt only |
+
+Historical 8k DFLASH results (300–1004 tok/s, including best-of-N and
+attractor runs) are ceiling provenance only. They are out of band and never
+count as the 200k/1M SLA.
 
 ## Privacy review before any "it is up" message
 

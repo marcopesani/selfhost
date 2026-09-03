@@ -32,7 +32,8 @@ Treat **1004** as a ceiling on a synthetic attractor. Same hardware + engine wit
 | **211** | 4× H200 (implied TP4) | vLLM | FP8 | MTP k=1 | — | dealignai FP8 card | Single stream |
 | 163 | 4× H200 | vLLM | FP8 | none | — | dealignai FP8 card | Baseline |
 | 166 | 8× B200 | SGLang | NVFP4 | off | — | Blackfrost DERISKED card | Single stream observation |
-| 145–151 | 2× RTX PRO 6000 | custom vLLM/B12X | EXL3 TR3 | DFlash2-7 | 32–64k | [brandonmusic](https://huggingface.co/brandonmusic/GLM-5.3-Flash-tr3-4bpw) | Not stock vLLM |
+| 154 / 149 / 142 | 2× RTX PRO 6000 | custom vLLM | EXL3-4bit | DFlash2 | 229k | LocalMaxxing | Same GPU count, not our checkpoint |
+| 150 | 2× RTX PRO 6000 | custom vLLM | EXL3-4bit | MTP | 353k | LocalMaxxing | Same GPU count, not our checkpoint |
 | 47–69 | 2–4× DGX Spark | vLLM DFlash2 | NVFP4 | DFlash2 k=7 | 262k–1M | tonyd2wild / cfontes | Wrong hardware class for Runpod |
 
 LocalMaxxing has **15** approved 2× RTX PRO 6000 runs for this model. Everything above ~300 tok/s is the SGLang+DFLASH2 family. vLLM on the same 2× card sits ~150–190.
@@ -43,7 +44,7 @@ Ranked. Do these in order.
 
 1. **Right GPU generation.** Hopper (H100/H200) wants **native FP8**. Blackwell workstation (RTX PRO 6000, SM120) wants **NVFP4 + flashinfer_cutlass** (not CuteDSL — CuteDSL hard-codes sm100). Ampere is a non-starter.
 2. **Speculative decoding.** DFLASH2 (block diffusion, `incoai/GLM-5.3-Flash-DFlash2`) is the only stack that has broken 300+ tok/s on this model. NEXTN/MTP is the reliable ~1.3–2× (163→211, or 143→208). No spec = ~160.
-3. **Tensor parallel width vs window.** 2× 96 GB holds NVFP4 + **200k** bf16 KV (~185 GB of 192). **1M needs 4×** (bf16 1M overshoots 2×; fp8 1M on 2× is a 2 GB cliff, unproven). 4× does not 2× decode. See [`context.md`](context.md).
+3. **Tensor parallel width vs window.** 2× 96 GB holds NVFP4 + **200k** bf16 KV only as a tight, unverified estimate (~188 GB of 192). **1M needs 4×** (even fp8 1M is ~198 GB on 2×). 4× does not 2× decode. See [`context.md`](context.md).
 4. **SM120 kernel flags** ([sglang#37105](https://github.com/sgl-project/sglang/issues/37105)). Without these, SGLang dies on RTX PRO 6000:
    - `SGLANG_OPT_DEEPGEMM_HC_PRENORM=0`
    - `--dsa-prefill-backend tilelang --dsa-decode-backend tilelang`

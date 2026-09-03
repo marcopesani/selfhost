@@ -30,7 +30,7 @@ NVIDIA documents a self-hosted RTX PRO 6000 Blackwell Server Edition validation 
 
 **Date:** 2026-09-03
 **Status:** accepted
-**Supersedes:** the 8k/64k pool in the ADR-004 recipe; 2× as the default SKU when the window is 1M
+**Supersedes:** the 8k/64k pool in the ADR-004 recipe; 4× as the default SKU when the window is 1M
 
 GLM-5.3-Flash’s native window is **1,048,576**. 8k / 32k / 64k are not serve targets. LocalMaxxing 300–1004 tok/s is ctx=8192 and is not the SLA.
 
@@ -43,7 +43,7 @@ Two legal configs (math in [`refs/context.md`](refs/context.md)):
 
 Do not provision 2× for 1M. Do not provision 4× for a single 200k stream (leftover VRAM is concurrency, not speed). Hopper fallback stays 4× H200 at the same two windows.
 
-Pick A or B **before** `pod create`. Default if unspecified: **B** (native window). 200k on 2× is expected to fit (~185 GB of 192) but has no published NVFP4 boot log.
+Pick A or B **before** `pod create`. Default if unspecified: **B** (native window). 200k on 2× is a tight estimate (~188 GB of 192, before any unmodeled allocator or DFLASH overhead) and has no published NVFP4 boot log.
 
 ## ADR-012 — API only via `ssh -L`; ACL :22; no Serve / SOCKS / Funnel
 
@@ -138,7 +138,7 @@ Runpod's HTTP proxy is public, unauthenticated, Cloudflare-fronted, and times ou
 
 The inference process binds `127.0.0.1:8000`. The laptop reaches it with:
 
-```
+```bash
 ssh -N -L 8000:127.0.0.1:8000 <pod>
 ```
 

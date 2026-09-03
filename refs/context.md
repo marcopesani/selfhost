@@ -6,7 +6,10 @@ Clamped 2026-09-03. Architecture from `zai-org/GLM-5.3-Flash` `config.json`. VRA
 
 The checkpoint’s `max_position_embeddings` is **1,048,576**. The hybrid stack (34 KDA layers + 11 sparse MLA layers, `index_topk=2048`) exists so decode does not pay dense-MHA cost on that window.
 
-LocalMaxxing’s 300–1004 tok/s family is **ctx=8192**, prompt 403–2048. Our previous recipe used `--max-total-tokens 65536`. Neither is a serve target. Prefill of a real 200k/1M prompt is the workload; a 64k pool throws most of the model away.
+LocalMaxxing’s 300–1004 tok/s family is **ctx=8192**, prompt 403–2048. Our
+previous recipe used a **64k** pool. Neither is a serve target. Prefill of a
+real 200k/1M prompt is the workload; a sub-200k pool throws most of the model
+away.
 
 Two legal windows:
 
@@ -50,7 +53,7 @@ that figure is essentially weights + draft (2.34 GB) + graphs. The following
 is an extrapolation from the published per-rank KV rate, not a boot log; DFLASH
 buffers and allocator fragmentation can make the real budget larger.
 
-| SKU | Window | KV dtype | Estimated boot |  Fits? |
+| SKU | Window | KV dtype | Estimated boot | Fits? |
 | --- | --- | --- | ---: | --- |
 | 2× 96 GB (192) | 200k | bf16 | ~188 GB | **Tight**, ~4 GB spare; unverified |
 | 2× 96 GB (192) | 200k | fp8 | ~185 GB | Tight, ~7 GB spare; unverified |
@@ -133,7 +136,7 @@ Hopper fallback is still **4× H200** + `UNCENSORED-FP8` + `--max-model-len 1048
 
 ## Do not
 
-- Serve `--max-total-tokens 8192` / `65536` / `131072`.
+- Do not serve a sub-200k pool; the old 8k/64k/128k attempts are retired.
 - Buy 4× and then clamp the window to 200k unless we want **concurrency** (several 200k seqs). One stream at 200k does not need 4×.
 - Plan 1M on 2× NVFP4.
 - Switch to EXL3 just to squeeze 1M onto 2× (ADR-010 pins NVFP4).
