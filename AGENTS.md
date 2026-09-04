@@ -1,6 +1,6 @@
 # Agent instructions
 
-This directory is a **scratchpad**, not a product repo. Your job in a new session is to continue the self-host of GLM-5.3-Flash abliterated on Runpod without losing privacy or the speed target. This boot’s API window is **512k (`524288`)** (ADR-025). SKU menu remains 200k or 1M (ADR-013); do not advertise 1M here.
+This directory is a **scratchpad**, not a product repo. Continue the self-host sitting. Current boot, constraints, and next action are in [`STATUS.md`](STATUS.md). Architecture choices are in [`DECISIONS.md`](DECISIONS.md). Do not copy findings or ADR conclusions into this file.
 
 ## First 60 seconds
 
@@ -8,19 +8,19 @@ This directory is a **scratchpad**, not a product repo. Your job in a new sessio
 2. Read [`DECISIONS.md`](DECISIONS.md). Do not reverse an ADR without writing a new one.
 3. If the user mentions a past sitting, read the latest file in [`sessions/`](sessions/) (local-only; gitignored).
 4. Check [`runpod/inventory.md`](runpod/inventory.md) (shape) and local `.env` / `runpod/inventory.local.md` (live IDs) before creating any billable resource.
-5. Speed / checkpoint / privacy / context / research-workload / **reseller $/MTok** answers are already in `refs/speed.md`, `refs/abliterated.md`, `refs/privacy.md`, `refs/context.md`, `refs/red-team.md`, `refs/ops.md`, `refs/pricing.md`. Do not re-litigate them without new measurements. Do not revive an 8k/64k pool. Do not swap this 4× pod to GLM-5.3 753B or a scanner image (ADR-019). Do not `--enable-lora` (ADR-020). Do not install `pi-webxp` / CAI / Strix on this guest; red-team package is casefile + xtodo, `/xp lite` (ADR-021). Do not add Grafana or pi HTTP dashboards; ops is snapshot + `/ops` skill (ADR-022). Do not lower the 65k omit-cap or `--allow-auto-truncate` (ADR-023). This boot serves **512k** (ADR-025), not 1M and not a 256k client-only cap. Reseller list is **$0.35 / $0.038 / $47** per MTok (ADR-026) — do not price from Z.ai or 208 tok/s. Never scrape `/get_server_info` or loop `/health`.
+5. Topic writeups live under [`refs/`](refs/). Read the matching file before answering. Do not re-litigate without a new measurement or a new ADR.
 
 ## Hard rules
 
-- Do not create a Community Cloud pod.
-- Do not create a serverless endpoint for this model. Prompts would leave the pod through Runpod's invoke API.
-- Do not add HTTP ports to the pod. Do not hand the user a `*.proxy.runpod.net` URL.
-- Do not bind vLLM/SGLang to `0.0.0.0`. Userspace Tailscale already rewrites tailnet ports onto localhost — close that with ACL :22, not by advertising the API.
+- Follow ADRs in [`DECISIONS.md`](DECISIONS.md). A faster or cheaper sitting that breaks one is a failed sitting.
+- Do not create a Community Cloud pod or a serverless endpoint. Do not add HTTP ports. Do not hand the user a `*.proxy.runpod.net` URL.
+- Bind the inference process to `127.0.0.1` only. Reach it with `ssh -L`. Do not curl a Tailscale IP, Serve, SOCKS, or Funnel.
 - Do not commit `.env`, `secrets/`, API keys, SSH keys, or model weights.
-- Do not commit live instance identifiers: pod id, template id, public IP, SSH port, or SSH key paths. Those belong in `.env` (`RUNPOD_POD_ID`, `RUNPOD_TEMPLATE_ID`, `SSH_HOST`, `SSH_PORT`) and optional `runpod/inventory.local.md`. Session notes are gitignored for the same reason.
-- Do not call ordinary Runpod provider-blind. Its optional volume-disk encryption is Runpod-keyed, has no BYOK, and does not protect plaintext in guest/GPU memory. If provider-blind privacy is required, do not provision until CPU/GPU confidential computing, attestation, and gated key release are verified.
-- Do not skip the cost guard. A 2× or 4× RTX PRO 6000 pod bills by the second while running. Set `--terminate-after` on experimental pods; stop or delete when a sitting ends unless the user says keep it warm. Do not buy 4× for one 200k stream.
+- Do not commit live instance identifiers: pod id, template id, public IP, SSH port, or SSH key paths. Those belong in `.env` and optional `runpod/inventory.local.md`. Session notes are gitignored for the same reason.
+- Privacy mode (provider-trusted vs provider-blind) is an ADR. Do not claim the other mode. Before any "it is up" message, complete the checklist below.
+- Do not skip the cost guard in [`runpod/cost.md`](runpod/cost.md). Pods bill while running. Stop, delete, or `--terminate-after` per that file and [`STATUS.md`](STATUS.md) unless the user says keep it warm.
 - Do not treat "Running" in the console as success. Success is a completion returned over the SSH tunnel.
+- Use `runpodctl` (or Runpod MCP if connected). Prefer `runpodctl pod create --wait`. Check live `--help`; do not invent flags.
 
 ## What to write down
 
@@ -34,41 +34,27 @@ Every sitting that changes state must:
 
 ## Provision order
 
-Volume first, then compute in that same data center. Never the reverse.
+Volume first, then compute in that same data center. Never the reverse. SKU, window, and engine flags are in [`DECISIONS.md`](DECISIONS.md) and [`configs/`](configs/).
 
 ```text
-verify provider-blind support or explicitly record provider-trusted mode
-→ pick A (2× / 200k) or B (4× / 1M; default)
+verify or record privacy mode (ADR)
+→ pick the SKU the ADRs bind
 → pick DC with that SKU on Secure Cloud
-→ create High-Performance network volume there
-→ create pod attached to that volume, SSH only, no HTTP ports
+→ create storage there
+→ create pod attached to that storage, SSH only, no HTTP ports
 → download weights once onto the volume
-→ start SGLang on 127.0.0.1 at 204800 (config A) or **524288** (this 4× boot, ADR-025). 1048576 only after a new ADR if the indexer holds a 1M chat.
+→ start the server on 127.0.0.1 with the bound context length
 → SSH tunnel from the laptop
-→ measure a prompt in-band, not 403 tokens @ 8k
+→ measure a prompt in-band
 ```
-
-Use `runpodctl` (or Runpod MCP if connected). Prefer `runpodctl pod create --wait`. Check live `--help`; do not invent flags.
 
 ## Speed vs honesty
 
-The LocalMaxxing headline (1004.9 tok/s) used a **locked attractor** and n-gram proposals that skipped the draft forward. Reproduce the **command and hardware**, then report our own numbers. Do not claim we matched 1004 tok/s unless we ran the same protocol and got it.
-
-Realistic bands to expect:
-
-| Band | Window | What it means |
-| --- | --- | --- |
-| ~140–154 tok/s | 229k–353k | 2× EXL3 analog (not our NVFP4). Honest 2× long-ctx floor |
-| **208 tok/s** | 1M configured | 4× NVFP4 NEXTN MTP5 (0xSero). In-band published |
-| ~160–210 tok/s | 200k/1M unknown | dealignai FP8 + MTP on 4× H200; short-prompt only |
-
-Historical 8k DFLASH results (300–1004 tok/s, including best-of-N and
-attractor runs) are ceiling provenance only. They are out of band and never
-count as the 200k/1M SLA.
+Reproduce the **command and hardware**, then report our own numbers. Do not claim we matched a published tok/s figure unless we ran the same protocol and got it. What counts as in-band, and which public numbers are ceiling-only, is in [`refs/speed.md`](refs/speed.md).
 
 ## Privacy review before any "it is up" message
 
-- [ ] Privacy mode is explicit: provider-trusted or provider-blind
+- [ ] Privacy mode is explicit: provider-trusted or provider-blind (must match the ADR)
 - [ ] Secure Cloud
 - [ ] Jupyter off
 - [ ] No HTTP ports / no proxy URL
@@ -85,4 +71,4 @@ count as the 200k/1M SLA.
 
 ## Out of scope unless the user asks
 
-Publishing a site, opening a PR, committing, building a UI, or serving the stock (non-abliterated) checkpoint as the primary model.
+Publishing a site, opening a PR, committing, or building a UI. The primary checkpoint is the one in [`DECISIONS.md`](DECISIONS.md); do not swap it unless the user asks and you write a new ADR.
