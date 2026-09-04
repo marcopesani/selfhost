@@ -24,7 +24,7 @@ Read [`STATUS.md`](STATUS.md). Live truth lives there (architecture, next action
 | [`refs/abliterated.md`](refs/abliterated.md) | Checkpoint comparison — dealignai CRACK wins |
 | [`refs/red-team.md`](refs/red-team.md) | Why Flash UNCENSORED @ 1M is the research model that fits this SKU |
 | [`refs/ops.md`](refs/ops.md) | In-pod devops: snapshot + `/ops` skill, not another dashboard |
-| [`refs/pricing.md`](refs/pricing.md) | Reseller $/MTok (input / cached / output) at 20% over this boot |
+| [`refs/pricing.md`](refs/pricing.md) | Reseller list $10 / $1 / $20 per MTok (blended premium, ADR-027) |
 | [`refs/privacy.md`](refs/privacy.md) | SSH `-L` first, userspace Tailscale overlay, no proxy |
 | [`refs/links.md`](refs/links.md) | Source URLs |
 | [`refs/snapshots/`](refs/snapshots/) | Frozen LocalMaxxing JSON |

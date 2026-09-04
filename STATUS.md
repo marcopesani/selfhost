@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-09-04 (reseller list ADR-026; API window 512k / ADR-025; SGLang serving)
+Last updated: 2026-09-04 (reseller list ADR-027; API window 512k / ADR-025; SGLang serving)
 
 ## One-liner
 
@@ -21,7 +21,7 @@ Live pod id / SSH endpoint: `.env` (`RUNPOD_POD_ID`, `SSH_HOST`, `SSH_PORT`) and
 | Harness | **pi + local XPI slice** (ADR-021). `@xaccefy/pi-casefile` + `@xaccefy/pi-xtodo`, `/xp lite`. Not the `@xaccefy/pi-xpi` umbrella (webxp / preview.is). Not CAI / Strix / OpenCode-in-pod. |
 | Ops | **Dumb snapshot + short pi `/ops`** (ADR-022). `/workspace/ops/LATEST.md` over SSH. vmui stays the only dashboard. No Grafana, no pi HTTP UIs, no `/health` loop, no auto-restart of SGLang unless a flag file exists. |
 | Decode UX | **65k omit-cap, 16k content reserve, 128k prefill batches** (ADR-023). **API window 512k** (ADR-025) so usage can hit 100%. Do not `--allow-auto-truncate`. Overnight extra think: `custom_params.thinking_budget: -1`. |
-| Pricing | **Busy list $0.35 / $0.038 / $47 per MTok** (input / cached / output, +20% on this boot’s GPU-seconds). Reserved **$10.10/hr**. Do not match Z.ai $0.15/$0.50. [`refs/pricing.md`](refs/pricing.md), ADR-026. |
+| Pricing | Publish **$10 / $1 / $20** per MTok (input / cached / output). Blended premium, ~20% on a reasoning-max agent hour (ADR-027). Cost-plus $0.35 / $0.038 / $47 is physics, not the page (ADR-026). Reserved `$10.10/hr`. Do not match Z.ai $0.15/$0.50. [`refs/pricing.md`](refs/pricing.md). |
 
 Full writeups: [`refs/context.md`](refs/context.md), [`refs/speed.md`](refs/speed.md), [`refs/abliterated.md`](refs/abliterated.md), [`refs/privacy.md`](refs/privacy.md), [`refs/red-team.md`](refs/red-team.md), [`refs/ops.md`](refs/ops.md), [`refs/pricing.md`](refs/pricing.md). **Pod UX design (2026-09-03)**: one SSH tunnel carries the API (SGLang natively serves OpenAI chat-completions, Responses, and Anthropic Messages wire formats — no adapter) and VictoriaMetrics/vmui observability; pi in tmux is the in-pod chat harness; `/get_server_info` leaks the api key (CVE-2026-15977) — never scrape it; details in [`sessions/2026-09-03-pod-ux.md`](sessions/2026-09-03-pod-ux.md).
 

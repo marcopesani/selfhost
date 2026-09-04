@@ -1,28 +1,64 @@
 # Reseller pricing — this 4× / 512k boot
 
-Derived 2026-09-04 from our in-band runs, not from Z.ai or 0xSero. Do not quote 208 or 1004 tok/s into a price. Math: GPU-seconds per token type on **this** image (no MTP, ADR-023 think processor on), fully-loaded pod dollars, then **+20%**. Round the list **up** so the floor is cleared.
+Derived 2026-09-04 from our in-band runs. Do not quote 208 or 1004 tok/s into a price. Physics cost is still GPU-seconds on **this** image (no MTP, ADR-023 think processor on) at fully-loaded **$8.42/hr**. The **published list is blended** so a long-context uncensored agent looks like a premium API (even input/output, cache at 10% of input) while the design mix still clears ~20% (ADR-027). Cost-plus-per-meter ($0.35 / $0.038 / $47) is the old ADR-026 table — do not put it on a price page.
 
-Writeup of the decision: ADR-026. Raw timings: [`benchmark.md`](benchmark.md). Pod dollars: [`../runpod/cost.md`](../runpod/cost.md).
+Writeup of the decision: ADR-027 (list), ADR-026 (cost basis). Raw timings: [`benchmark.md`](benchmark.md). Pod dollars: [`../runpod/cost.md`](../runpod/cost.md).
 
-## List (metered, busy GPU)
+## List (what you publish)
 
-Per **million tokens**. 20% margin on fully-loaded cost while the GPUs are doing that work. One tenant / one long stream.
+Per **million tokens**. Premium uncensored 512k, not Flash.
 
-| Meter | What it is | tok/s used | Cost / MTok | **List / MTok** |
-| --- | --- | ---: | ---: | ---: |
-| **Input** | Prompt tokens that miss prefix cache | 8,087 | $0.289 | **$0.35** |
-| **Cached input** | Prompt tokens served from radix / prefix cache | 75,000 | $0.031 | **$0.038** |
-| **Output** | All completion tokens, including glm45 thinking | 60.0 | $39.00 | **$47** |
+| Meter | What it is | **List / MTok** |
+| --- | --- | ---: |
+| **Input** | Prompt tokens that miss prefix cache | **$10.00** |
+| **Cached input** | Prompt tokens served from radix / prefix cache | **$1.00** |
+| **Output** | All completion tokens, including glm45 thinking | **$20.00** |
 
-Reserved alternative (same 20%): **$10.10 / hr** for the box, tokens optional. 24×30 always-on: **$6,062** cost → **$7,272** list.
+2 : 1 output/input. Cached is **10% of input** (same shape as Anthropic cache-read). Reserved alternative (same 20% on the box): **$10.10 / hr**. 24×30 always-on: **$6,062** cost → **$7,272** list.
 
-## Do not compete with Z.ai on $/MTok
+This is **not** Z.ai Flash ($0.15 / $0.03 / $0.50). It sits next to Opus-class stickers ($5 / $25): we charge **more for the window** (uncensored 512k on a dedicated 4×) and **less of a decode tax** than cost-plus would. If a buyer wants Flash prices, they should buy Flash.
 
-Z.ai / OpenRouter GLM-5.3-Flash (2026-09): list **$0.15 / $0.50 / $0.03**, launch promo **$0.075 / $0.25 / $0.015** through 2026-09-09 UTC+8. Our output list is ~**94×** their list. That is the physics of one 4× dedicated stream vs a batched cluster, not a rounding error.
+## Why not cost-plus per meter
 
-This SKU sells **uncensored CRACK + 512k + provider-trusted path**, not cheap Flash. If a buyer wants Z.ai prices, they should buy Z.ai.
+GPU-second cost on this boot:
 
-## Cost stack
+| Meter | tok/s | Cost / MTok | Cost+20% |
+| --- | ---: | ---: | ---: |
+| Input | 8,087 | $0.289 | $0.35 |
+| Cached input | 75,000 | $0.031 | $0.038 |
+| Output | 60.0 | $39.00 | $47 |
+
+That 134 : 1 output/input ratio is honest physics (decode is slow, prefill is fast) and a terrible consumer page. Publishing $47/MTok next to Z.ai’s $0.50 looks like a gouge even when a real 512k sitting is mostly cached prefix.
+
+Blending moves the margin onto **input and cache** — the thing this SKU actually sells (a private uncensored window). Output is priced like a frontier model, not like 18 minutes of GPU per million tokens.
+
+## Design mix (where 20% is earned)
+
+Busy GPU, `reasoning_effort=max`, one stream. Each turn: **80k cached + 3k new + 4k out** (think + content). 68.1 s/turn → **52.9 turns/hr**.
+
+| Meter | MTok / busy hour |
+| --- | ---: |
+| Cached input | 4.23 |
+| Input | 0.159 |
+| Output | 0.211 |
+
+Revenue at $10 / $1 / $20 = **$10.04 / hr** vs $8.42 cost → **19%** (the 20% floor, rounded to consumer figures). Lighter turns (50k cached + 2k new + 2k out) land fatter (~37%). A whole sitting (one ~100k ingest, then 40 cached agent turns) lands ~66% because cache is billed on every turn — that is the intended product.
+
+**Decode-only loses.** 216k output/hr × $20 = $4.32 vs $8.42 cost. A 16k think dump on an 80k prefix is ~−33%. Those buyers take the **$10.10/hr reserved** seat. Do not sell this list to a 65k-think farm.
+
+## Positioning
+
+| Offer | Input | Cached | Output | What it is |
+| --- | ---: | ---: | ---: | --- |
+| Z.ai GLM-5.3-Flash list | $0.15 | $0.03 | $0.50 | Commodity, censored, batched |
+| Claude Sonnet-class | $3 | ~$0.30 | $15 | General premium |
+| Claude Opus-class | $5 | ~$0.50 | $25 | Frontier |
+| **This list** | **$10** | **$1.00** | **$20** | Uncensored CRACK, 512k, dedicated 4×, provider-trusted |
+| ADR-026 cost-plus (do not publish) | $0.35 | $0.038 | $47 | Physics, ugly |
+
+Story for a consumer: you pay for the **uncensored long window**, not a surprise decode meter. Cache hits are a dime on the dollar vs fresh input, same as every hosted API they already know.
+
+## Cost stack (unchanged)
 
 | Line | Rate | Hourly |
 | --- | --- | ---: |
@@ -31,63 +67,40 @@ This SKU sells **uncensored CRACK + 512k + provider-trusted path**, not cheap Fl
 | Container disk 50 GB, running | $0.10/GB-month | $0.007 |
 | **Fully loaded, pod up** | | **$8.42** |
 
-Stopped volume disk is **$0.20/GB-month** ($80/mo on 400 GB). A reseller API keeps the pod **up**; do not price as if we stop between requests. Cold SGLang reload is ~11 min (~$1.54) plus JIT prefill (first 22k ingest was ~355 tok/s, not the 8.1k figure).
+Throughput behind the cost column: ADR-023 briefing **60.0 tok/s** decode, **8,087 tok/s** cold prefill, **75,000 tok/s** cache floor. Decode falls with fill (35.4 @ 655k, 29.4 @ 825k). Deep-window sessions belong on reserved if they are think-heavy.
 
-Formula: `cost_per_MTok = 8.42 × 1e6 / (tok_s × 3600)`. List = that × 1.20, rounded up.
-
-## Throughput this list is built on
-
-Consumer boot (ADR-023): TileLang DSA, bf16 KV, think-budget logit processor, **no MTP**. API window 512k (ADR-025). Protocol: SSE + `include_usage`. Decode = `(completion_tokens − 1) / (t_last − t_first)`. Prefill from TTFT on a **cold unique** corpus.
-
-| Meter | Measurement | Why this number |
-| --- | --- | --- |
-| Output **60.0 tok/s** | 94,490 prompt, 2,348 out, `finish=stop` after ADR-023 reboot | Actual daily-job decode with the processor on. Short-prompt 90.6 and all-think 83.2 were the **previous** boot. |
-| Input **8,087 tok/s** | same request, TTFT 11.68 s | Honest cold prefill. Do not use the first-request 22k @ ~355 tok/s (JIT). |
-| Cached **75,000 tok/s** | conservative floor from paired warm TTFTs | ADR-023 follow-up: 95,915 prompt in 1.20 s after ~1.4k new tokens → ~93k tok/s implied cache. Earlier pair (91,759 in 1.23 s, ~20 new) → ~74k apparent. 75k keeps per-request overhead at a ~95k prefix. |
-
-Decode falls with fill: **35.4 tok/s** at 655k, **29.4 tok/s** at 825k. At a packed 512k window interpolate ~42 tok/s. The $47 output list is a **~100k-context** number. Deep-window sessions compress margin unless the buyer is on the reserved hour or you use the 70% occupancy list below.
-
-Do not fold DFLASH2 into a lower output price. The draft is **CC BY-NC-ND**. Native MTP is still blocked (sglang#36599). If a later image holds MTP at the published 208 tok/s, output cost becomes ~$11.24/MTok and list **$13.50** — still ~27× Z.ai list. Write a new ADR; do not silently cut.
+Do not fold DFLASH2 into a lower output price (CC BY-NC-ND). MTP still blocked (sglang#36599). If MTP serves at 208 tok/s, rewrite ADR-027 — physics cost of output drops to ~$11.24/MTok; the blended list can come down, still not to Flash.
 
 ## What to bill
 
-- **Input** — new prompt tokens (cache miss).
-- **Cached input** — prefix-cache hit. SGLang `prompt_tokens_details` was **`null`** on our streams. A reseller gateway must hash prefixes (or wait for a usage field) or it will either give cache away or overbill input.
-- **Output** — every completion token: reasoning, content, tool-call JSON. `reasoning_effort=max` is the uncensor default (ADR-010). Thinking is not a free meter.
-- One 512k stream. At ~94k we sat ~84 GB/GPU; at 825k, 97 GB. A second full-window chat does not fit. Leftover VRAM is short-prompt concurrency, not a second 512k tenant.
+- **Input** — cache miss.
+- **Cached input** — prefix-cache hit. SGLang `prompt_tokens_details` was **`null`** on our streams. A gateway must hash prefixes or this list overcharges every follow-up as $10 input (and undercharges relative to the design mix if you then “eat” cache). The $1 cache meter is load-bearing.
+- **Output** — every completion token: reasoning, content, tool-call JSON. Thinking is not free.
+- One 512k stream. Leftover VRAM is short-prompt concurrency, not a second full-window tenant.
 
 ## Occupancy (shared always-on)
 
-Busy-GPU list above earns 20% only while the box is working. Empty hours are a loss. If this is a **shared** warm API, load the same cost at **70% fill** then +20%:
+Busy list earns ~20% only while the box is full of the design mix. Empty hours are a loss. Shared warm API at **70% fill**, same blend scaled: **$14 / $1.40 / $29**. Prefer **reserved $10.10/hr** for one research tenant.
 
-| Meter | List / MTok |
-| --- | ---: |
-| Input | **$0.50** |
-| Cached input | **$0.054** |
-| Output | **$67** |
+## Worked checks (published list)
 
-Prefer **reserved $10.10/hr** when the buyer is one research tenant. Capacity is one long stream; multiplexing 512k agents on this SKU is a QoS problem, not a volume play.
-
-## Worked checks (busy list vs measured wall time)
-
-Revenue uses $0.35 / $0.038 / $47. Cost uses $8.42/hr × e2e.
+Revenue uses $10 / $1 / $20. Cost uses $8.42/hr × e2e.
 
 | Request | Tokens | e2e | Revenue | GPU cost | vs 20% |
 | --- | --- | ---: | ---: | ---: | --- |
-| ADR-023 cold briefing | 94,490 in + 2,348 out | 50.8 s | $0.143 | $0.119 | ~21% |
-| Prefix-cached follow-up | 95,915 cached + 122 out | 2.94 s | $0.0094 | $0.0069 | fat (75k cache is conservative) |
-| Wave-2 last healthy | ~16k in + ~809k cached + ~214 out | ~13.7 s | ~$0.047 | $0.032 | fat on cache; **thin on decode** (29.4 tok/s) |
-
-A coding-agent hour (~105 turns, 50k cached + 2k new + 2k out each) bills ~$10.15 vs $8.42 cost — the output meter carries almost all of it. That mix is this SKU’s job (ADR-019).
+| ADR-023 cold briefing | 94,490 in + 2,348 out | 50.8 s | $0.99 | $0.119 | fat (ingest pays for the window) |
+| Prefix-cached follow-up | 95,915 cached + 122 out | 2.94 s | $0.098 | $0.0069 | fat (cache meter) |
+| Design-mix busy hour | 0.159 + 4.23 cached + 0.211 out MTok | 3600 s | $10.04 | $8.42 | **~19%** |
+| 16k think on 80k prefix | 2k in + 80k cached + 16k out | ~268 s | $0.42 | $0.627 | **loss — reserved** |
 
 ## Commercial rails (not priced, still binding)
 
-- Serve path stays ADR-003 / 011 / 012: `ssh -L` (or Tailscale `:22` + `-L`), no proxy URL, no serverless. A public `*.proxy.runpod.net` meter would reverse privacy ADRs.
+- Serve path stays ADR-003 / 011 / 012: `ssh -L` (or Tailscale `:22` + `-L`), no proxy URL, no serverless.
 - Provider-trusted (ADR-016). Do not sell this as provider-blind.
-- Confirm the **dealignai** UNCENSORED checkpoint’s license allows the commercial serve you are selling. Stock Flash is MIT; the CRACK is a derivative.
+- Confirm the **dealignai** UNCENSORED checkpoint’s license allows the commercial serve. Stock Flash is MIT; the CRACK is a derivative.
 - Do not enable DFLASH2 on a paid path (CC BY-NC-ND).
 - Do not advertise 1M (ADR-025).
 
 ## When to rewrite this
 
-New ADR, not a silent edit: MTP actually serving; DFLASH with a commercial license; occupancy measured from a live meter; GPU or storage rate change; a second concurrent 512k stream proven in VRAM.
+New ADR, not a silent edit: design mix measured from a live meter (not this constructed agent hour); MTP actually serving; DFLASH with a commercial license; GPU or storage rate change; selling decode-only and losing.

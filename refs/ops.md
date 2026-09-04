@@ -73,9 +73,9 @@ the failure mode, not missing Slack.
 ## Sources
 
 - Pod UX sitting: [`../sessions/2026-09-03-pod-ux.md`](../sessions/2026-09-03-pod-ux.md)
-- SGLang `/health` orphan bug: https://github.com/sgl-project/sglang/issues/35884
+- SGLang `/health` orphan bug: <https://github.com/sgl-project/sglang/issues/35884>
 - CVE-2026-15977 / sglang#37457 (`/get_server_info` leaks `--api-key`)
-- VictoriaMetrics query API: https://docs.victoriametrics.com/victoriametrics/single-server-victoriametrics/
-- pi prompt templates: https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/prompt-templates.md
-- pi-debug-dashboard (rejected HTTP): https://github.com/ricoyudog/pi-debug-dashboard
-- pi-telemetry local SQLite (optional): https://www.npmjs.com/package/@spences10/pi-telemetry
+- VictoriaMetrics query API: <https://docs.victoriametrics.com/victoriametrics/single-server-victoriametrics/>
+- pi prompt templates: <https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/prompt-templates.md>
+- pi-debug-dashboard (rejected HTTP): <https://github.com/ricoyudog/pi-debug-dashboard>
+- pi-telemetry local SQLite (optional): <https://www.npmjs.com/package/@spences10/pi-telemetry>

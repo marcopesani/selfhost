@@ -2,27 +2,44 @@
 
 Append-only. Newest first. Reverse a decision by adding a new ADR that supersedes the old one.
 
-## ADR-026 — Reseller list is GPU-second cost + 20% on this boot’s measured rates
+## ADR-027 — Publish a blended premium list; keep 20% on the long-context mix
 
 **Date:** 2026-09-04
 **Status:** accepted
-**Qualifies:** ADR-007 (208 / 1004 are not the SLA), ADR-010 (CRACK, `reasoning_effort=max`), ADR-016 (provider-trusted), ADR-019 (one research stream), ADR-023 (consumer decode), ADR-025 (512k window)
+**Supersedes:** the published $/MTok table in ADR-026 (cost-plus per meter)
+**Keeps:** ADR-026’s cost basis ($8.42/hr, 8,087 / 75,000 / 60.0 tok/s, no MTP, no DFLASH on a paid path)
 
-Resale of access to **this** serve is priced from **our** in-band GPU-seconds, not from Z.ai / OpenRouter GLM-5.3-Flash ($0.15 / $0.50 / $0.03 list) and not from 0xSero’s 208 tok/s MTP number. This image has no MTP (sglang#36599). DFLASH2 is CC BY-NC-ND — do not use it to cut the output price.
-
-**Busy-GPU list** (20% over fully-loaded $8.42/hr, rounded up):
+ADR-026’s $0.35 / $0.038 / $47 is correct physics and a bad consumer page (134 : 1 output/input vs ~3–5 : 1 on hosted APIs). Resale of **this** uncensored 512k SKU publishes a **blended** list that still clears ~20% on a reasoning-max agent hour (80k cached + 3k new + 4k out per turn):
 
 | Meter | List / MTok |
 | --- | ---: |
-| Input (cache miss) | **$0.35** |
-| Cached input | **$0.038** |
-| Output (incl. thinking) | **$47** |
+| Input | **$10.00** |
+| Cached input | **$1.00** |
+| Output (incl. thinking) | **$20.00** |
 
-Rates behind the list: prefill **8,087 tok/s**, cache floor **75,000 tok/s**, decode **60.0 tok/s** (ADR-023 94k briefing). Thinking tokens are output. One 512k stream.
+2 : 1 output/input, cache = 10% of input. Position next to Opus-class stickers, not Z.ai Flash ($0.15 / $0.50). The window and the CRACK are the premium; do not put a $47 decode tax on the price page.
 
-Same 20% as a reserved seat: **$10.10/hr**. A shared always-on API that is not full uses the 70% occupancy list in [`refs/pricing.md`](refs/pricing.md) ($0.50 / $0.054 / $67). Do not match Z.ai on $/MTok — the product is uncensored 512k on a dedicated box.
+Same 20% as a reserved seat: **$10.10/hr**. Decode-only and 16k+ think dumps lose on this list — those buyers take the reserved hour. Shared always-on at 70% fill: $14 / $1.40 / $29. Cache meter is load-bearing (`prompt_tokens_details` was null). Math: [`refs/pricing.md`](refs/pricing.md).
 
-Rewrite this ADR if MTP serves, DFLASH is licensed for commercial use, or the GPU/storage rate changes. Math and worked checks: [`refs/pricing.md`](refs/pricing.md).
+## ADR-026 — Reseller list is GPU-second cost + 20% on this boot’s measured rates
+
+**Date:** 2026-09-04
+**Status:** accepted (cost basis). Published table superseded by ADR-027.
+**Qualifies:** ADR-007 (208 / 1004 are not the SLA), ADR-010 (CRACK, `reasoning_effort=max`), ADR-016 (provider-trusted), ADR-019 (one research stream), ADR-023 (consumer decode), ADR-025 (512k window)
+
+Resale of access to **this** serve is costed from **our** in-band GPU-seconds, not from Z.ai / OpenRouter GLM-5.3-Flash ($0.15 / $0.50 / $0.03 list) and not from 0xSero’s 208 tok/s MTP number. This image has no MTP (sglang#36599). DFLASH2 is CC BY-NC-ND — do not use it to cut the output price.
+
+**Cost-plus per meter** (20% over fully-loaded $8.42/hr, rounded up) — **do not publish**; ADR-027 is the list:
+
+| Meter | Cost+20% / MTok |
+| --- | ---: |
+| Input (cache miss) | $0.35 |
+| Cached input | $0.038 |
+| Output (incl. thinking) | $47 |
+
+Rates behind the cost: prefill **8,087 tok/s**, cache floor **75,000 tok/s**, decode **60.0 tok/s** (ADR-023 94k briefing). Thinking tokens are output. One 512k stream.
+
+Same 20% as a reserved seat: **$10.10/hr**. Rewrite the cost basis if MTP serves, DFLASH is licensed for commercial use, or the GPU/storage rate changes.
 
 ## ADR-025 — This boot’s API max context is 512k, so usage can hit 100%
 

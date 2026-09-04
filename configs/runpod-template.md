@@ -1,6 +1,6 @@
 # Runpod template `glm-flash-1m`
 
-Console: https://console.runpod.io/user/templates (private, NVIDIA, Pod). Look up the id at deploy time; do not commit it.
+Console: <https://console.runpod.io/user/templates> (private, NVIDIA, Pod). Look up the id at deploy time; do not commit it.
 
 Created 2026-09-04 in the web console. Encryption, GPU count, and data center are **not** template fields — set them at each deploy.
 

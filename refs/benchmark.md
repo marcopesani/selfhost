@@ -1,6 +1,6 @@
 # Benchmarks
 
-In-band means the engine is configured at **200k or 1M** (ADR-013) and the prompt is not a 403-token 8k attractor. Do not mix 8k DFLASH ceiling numbers into this table. Reseller $/MTok from these rows: [`pricing.md`](pricing.md) (ADR-026).
+In-band means the engine is configured at **200k or 1M** (ADR-013) and the prompt is not a 403-token 8k attractor. Do not mix 8k DFLASH ceiling numbers into this table. Reseller $/MTok from these rows: [`pricing.md`](pricing.md) (ADR-027 list, ADR-026 cost).
 
 ## Published (not ours)
 

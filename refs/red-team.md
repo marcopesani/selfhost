@@ -161,23 +161,23 @@ not Louie and not a Kali sidecar next to the weights.
 
 ## Sources
 
-- Z.ai GLM-5.3: https://z.ai/blog/glm-5.3
-- Z.ai GLM-5.3-Flash: https://z.ai/blog/glm-5.3-flash
+- Z.ai GLM-5.3: <https://z.ai/blog/glm-5.3>
+- Z.ai GLM-5.3-Flash: <https://z.ai/blog/glm-5.3-flash>
 - dealignai Flash UNCENSORED-NVFP4 (HF card, HarmBench table)
 - dealignai GLM-5.3-CYBERSECURITY-FP8 (753B, 8× H200 recipe)
 - LibertAIDAI GLM-5.3-NVFP4 (433 GiB; 4× 96 GB does not fit)
-- Graphistry CyBT-CTF / GLM-5.2: https://www.graphistry.com/blog/glm-5-2-cybersecurity-open-model
-- TrustedSec self-host offsec benches: https://trustedsec.com/blog/benchmarking-self-hosted-llms-for-offensive-security
+- Graphistry CyBT-CTF / GLM-5.2: <https://www.graphistry.com/blog/glm-5-2-cybersecurity-open-model>
+- TrustedSec self-host offsec benches: <https://trustedsec.com/blog/benchmarking-self-hosted-llms-for-offensive-security>
 - llm-stats Flash vs 5.3 (2026-09-04 fetch)
 - Local AI Zone flash-tier survey (architecture / context)
 - pi default tools: earendil-works/pi coding-agent README (`read` `write` `edit` `bash`)
-- Heretic GGUF LoRA (abliteration, 26% residual, not cyber): https://huggingface.co/MorinoNushi/GLM-5.3-Flash-Heretic-LoRA-V1-GGUF
-- GLM-4.7-Flash cyber LoRA (wrong base): https://huggingface.co/neilopet/glm4-cybersec-v2-lora
-- xOffense (Qwen3-32B LoRA): https://arxiv.org/pdf/2509.13021
-- lovesenko TR3 card (mHC vs LoRA): https://huggingface.co/lovesenko/GLM-5.3-Flash-tr3-4bpw-Abliterated
-- SGLang experimental NVFP4 MoE LoRA: https://github.com/sgl-project/sglang/pull/27329
-- Flash GLP-44 (steering, gated): https://huggingface.co/msuiche/GLM-5.3-Flash-abliterated-cyber-GLP-44
-- XPI (pi security tools): https://github.com/xaccefy/pi-xpi
-- XPI guide (webxp / PREVIEW_IS / `/xp lite`): https://github.com/xaccefy/pi-xpi/blob/main/docs/guide.md
-- pi models.json: https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/models.md
-- OpenCode custom OpenAI-compat provider: https://opencode.ai/docs/providers/
+- Heretic GGUF LoRA (abliteration, 26% residual, not cyber): <https://huggingface.co/MorinoNushi/GLM-5.3-Flash-Heretic-LoRA-V1-GGUF>
+- GLM-4.7-Flash cyber LoRA (wrong base): <https://huggingface.co/neilopet/glm4-cybersec-v2-lora>
+- xOffense (Qwen3-32B LoRA): <https://arxiv.org/pdf/2509.13021>
+- lovesenko TR3 card (mHC vs LoRA): <https://huggingface.co/lovesenko/GLM-5.3-Flash-tr3-4bpw-Abliterated>
+- SGLang experimental NVFP4 MoE LoRA: <https://github.com/sgl-project/sglang/pull/27329>
+- Flash GLP-44 (steering, gated): <https://huggingface.co/msuiche/GLM-5.3-Flash-abliterated-cyber-GLP-44>
+- XPI (pi security tools): <https://github.com/xaccefy/pi-xpi>
+- XPI guide (webxp / PREVIEW_IS / `/xp lite`): <https://github.com/xaccefy/pi-xpi/blob/main/docs/guide.md>
+- pi models.json: <https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/models.md>
+- OpenCode custom OpenAI-compat provider: <https://opencode.ai/docs/providers/>

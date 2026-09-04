@@ -66,7 +66,7 @@ Community recipe: [koshimazaki/tailscale-runpod](https://github.com/koshimazaki/
 
 ## Recommended architecture
 
-```
+```text
 Laptop (kernel Tailscale)
   client → http://127.0.0.1:8000 + Bearer
       │
