@@ -29,7 +29,7 @@ Read [`STATUS.md`](STATUS.md). Live truth lives there (architecture, next action
 | [`refs/links.md`](refs/links.md) | Source URLs |
 | [`refs/snapshots/`](refs/snapshots/) | Frozen LocalMaxxing JSON |
 | [`runpod/`](runpod/) | Inventory, cost guard, provision checklist |
-| [`configs/`](configs/) | Env, template, serve boot |
+| [`configs/`](configs/) | Env, template, serve boot, laptop share pack (`share-laptop.md`) |
 | [`scripts/`](scripts/) | Operator scripts (tunnel, measure). Run on the laptop or the pod as marked |
 | [`sessions/`](sessions/) | Local sitting notes (gitignored except the template). One file per sitting |
 | [`secrets/`](secrets/) | Local-only credentials. Gitignored |

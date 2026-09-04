@@ -2,6 +2,22 @@
 
 Append-only. Newest first. Reverse a decision by adding a new ADR that supersedes the old one.
 
+## ADR-028 — Share overlay is tagged `tag:glm`; laptops bind 18000/18428
+
+**Date:** 2026-09-04
+**Status:** accepted
+**Qualifies:** ADR-003, ADR-011, ADR-012, ADR-015
+
+The pod still binds SGLang at `127.0.0.1:8000`. That does not mean laptops should.
+
+**Laptop LocalForward** is `18000 → 127.0.0.1:8000` and `18428 → 127.0.0.1:8428`. `:8000` is already everyone’s uvicorn. In-pod pi keeps `http://127.0.0.1:8000/v1`. Laptop pi / Codex / Claude Code use `http://127.0.0.1:18000`. Override with `LOCAL_PORT` if 18000 is taken. Still loopback. Still never `http://100.x:8000`.
+
+**The pod is a tagged Tailscale node (`tag:glm`), not a user device.** A personal tailnet already allows `member → member *`. Userspace netstack would then publish every localhost port on a user-owned pod, including SGLang, to the Mac mini and every invited teammate. Tags take the node out of `autogroup:member` destinations. Grants: `member → member *` (existing devices) plus `member → tag:glm:22` only. Tailscale SSH `accept` for `root` on `tag:glm` so `-L` works. No Serve, SOCKS, Funnel, exit node.
+
+First `tailscale up` uses an auth key with `tag:glm` (reusable, not ephemeral, state on `/workspace/tailscale`). Browser login as a user device is bootstrap-only and must be logged out before inviting anyone.
+
+Canonical ACL: [`configs/tailscale-acl.hujson`](configs/tailscale-acl.hujson). Laptop pack: [`configs/share-laptop.md`](configs/share-laptop.md).
+
 ## ADR-027 — Publish a blended premium list; keep 20% on the long-context mix
 
 **Date:** 2026-09-04

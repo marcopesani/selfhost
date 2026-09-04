@@ -1,0 +1,23 @@
+{
+  "providers": {
+    "sglang-loopback": {
+      "api": "openai-completions",
+      "apiKey": "$GLM_API_KEY",
+      "baseUrl": "http://127.0.0.1:18000/v1",
+      "compat": {
+        "supportsDeveloperRole": false
+      },
+      "models": [
+        {
+          "id": "glm-5.3-flash",
+          "name": "GLM-5.3-Flash UNCENSORED 512k",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 524288,
+          "maxTokens": 65536,
+          "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 }
+        }
+      ]
+    }
+  }
+}

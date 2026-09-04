@@ -1,0 +1,10 @@
+Host glm-flash
+  HostName glm-flash
+  User root
+  # macOS libc DNS often misses MagicDNS; tailscale nc uses the internal resolver.
+  ProxyCommand tailscale nc %h %p
+  LocalForward 18000 127.0.0.1:8000
+  LocalForward 18428 127.0.0.1:8428
+  ExitOnForwardFailure yes
+  ServerAliveInterval 30
+  ServerAliveCountMax 3

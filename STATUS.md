@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-09-04 (reseller list ADR-027; API window 512k / ADR-025; SGLang serving)
+Last updated: 2026-09-04 (`glm-flash` overlay SSH live; laptop :18000 via Tailscale `ssh glm-flash`)
 
 ## One-liner
 
@@ -31,16 +31,16 @@ Shape only — IDs are local. See [`runpod/inventory.md`](runpod/inventory.md).
 
 - Private template named `glm-flash-1m` (console id in `.env` as `RUNPOD_TEMPLATE_ID`).
 - Config B pod on Secure Cloud, 4× RTX PRO 6000, encrypted 400 GB volume at `/workspace`. Pod-scoped: **stop, never delete**.
-- SGLang: `127.0.0.1:8000`, bearer required, **512k** bf16 KV (ADR-025). `max_prefill_tokens=131072`, `chunked_prefill_size=16384`. Tunnel: `scripts/ssh-tunnel.sh` (or `ssh -N -L 8000:127.0.0.1:8000 -L 8428:127.0.0.1:8428`).
+- SGLang: `127.0.0.1:8000`, bearer required, **512k** bf16 KV (ADR-025). `max_prefill_tokens=131072`, `chunked_prefill_size=16384`. Laptop tunnel: `scripts/ssh-tunnel.sh` (or `ssh -N -L 18000:127.0.0.1:8000 -L 18428:127.0.0.1:8428`). Clients on the laptop use `http://127.0.0.1:18000`, not `:8000`.
 
 ## Privacy review (this boot)
 
 - Provider-trusted (ADR-016), Secure Cloud, Jupyter off, no HTTP ports advertised, process on `127.0.0.1:8000`, bearer on, telemetry env off, weights on the volume, sample via `ssh -L` not proxy / not `100.x:8000`, encrypted volume accepted as Runpod-keyed, `swapon` empty.
-- Residual: platform HTTP sidecar mapping (nothing in-guest listens), MooseFS ignores unix modes on `/workspace/secrets`, Tailscale not installed yet (direct TCP `:22` only), NUMA affinity skipped (no `SYS_NICE`), `--enable-custom-logit-processor` (loopback + bearer).
+- Residual: platform HTTP sidecar mapping (nothing in-guest listens), MooseFS ignores unix modes on `/workspace/secrets`, **userspace `glm-flash` is online with `tag:glm`** (systemd TUN unit disabled). Overlay SSH is live on this Mac (`ssh glm-flash` / `scripts/glm-up.sh` → `127.0.0.1:18000`). Tailscale `:8000` times out (ACL). A second VPN on the laptop (NordLynx) blackholes overlay TCP even when `tailscale ping` works. NUMA affinity skipped (no `SYS_NICE`), `--enable-custom-logit-processor` (loopback + bearer).
 
 ## Blocked on
 
-- MTP still blocked on this image (sglang#36599). Tailscale auth key still optional.
+- MTP still blocked on this image (sglang#36599). Overlay path is signed off on this Mac: sample was `ssh -L` → `127.0.0.1:18000/v1/models` **200** (`glm-5.3-flash`), not a Tailscale IP and not the Runpod proxy. Teammates: invite to the tailnet + [`configs/share-laptop.md`](configs/share-laptop.md). They must not run a second VPN beside Tailscale.
 - A 1M *chat* is not served on this boot (ADR-025). DSA indexer CUDA OOM was measured at ~825k / 16k prefills and ~655k / 100k prefills while the flag was still 1,048,576.
 
 ## Last measurement
@@ -49,8 +49,5 @@ Long chat (while still 1M-configured): **39/39** through **825,511**, then DSA i
 
 ## Next action
 
-1. Point pi at `sglang-loopback` / `glm-5.3-flash` (`http://127.0.0.1:8000/v1`). Bearer is `GLM_API_KEY`. Never scrape `/get_server_info`.
-2. Smoke: pi multi-tool (sglang#36669), Codex `/v1/responses`, glm47 streaming.
-3. After pi talks to the loopback API: `pi install npm:@xaccefy/pi-casefile` and `pi-xtodo` (ADR-021); `/xp lite` smoke. Do not install `pi-webxp`.
-4. Copy `configs/ops-snapshot.sh` onto `/workspace/ops/` and start the 60s loop in tmux (ADR-022). Do not create `AUTO_RESTART` unless asked.
-5. **Stop** (do not delete, do not `--terminate-after`) when the sitting ends unless told to keep it warm.
+1. Invite teammates to the tailnet and hand them [`configs/share-laptop.md`](configs/share-laptop.md) + `GLM_API_KEY`. Laptop: `http://127.0.0.1:18000/v1` after `ssh -N glm-flash` (or `scripts/glm-up.sh`). In-pod pi stays `http://127.0.0.1:8000/v1`. Never scrape `/get_server_info`. Never curl Tailscale `:8000`.
+2. Still outstanding from prior sitting: pi multi-tool smoke, casefile/xtodo, ops snapshot. **Stop** (do not delete) when the sitting ends unless told to keep it warm.

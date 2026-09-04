@@ -1,0 +1,49 @@
+// Merge of the stock personal-tailnet policy + tag:glm (ADR-028).
+// Do not keep src/dst/ip "*" — grants are additive, so *:* would still
+// publish userspace localhost (SGLang :8000) on the tagged pod.
+// member→member * is your MacBook ↔ Mac mini (and any other user device).
+//
+// Classic ACL dst "tag:glm:22" is required in addition to the grant.
+// Grants compile on the tagged node (inbound :22). The classic ACL is
+// what puts glm-flash in the laptop's wireguard engine (InEngine).
+{
+	"tagOwners": {
+		"tag:glm": ["autogroup:admin"],
+	},
+
+	"acls": [
+		{
+			"action": "accept",
+			"src":    ["autogroup:member"],
+			"dst":    ["tag:glm:22"],
+		},
+	],
+
+	"grants": [
+		{
+			"src": ["autogroup:member"],
+			"dst": ["autogroup:member"],
+			"ip": ["*"],
+		},
+		{
+			"src": ["autogroup:member"],
+			"dst": ["tag:glm"],
+			"ip": ["tcp:22"],
+		},
+	],
+
+	"ssh": [
+		{
+			"action": "check",
+			"src":    ["autogroup:member"],
+			"dst":    ["autogroup:self"],
+			"users":  ["autogroup:nonroot", "root"],
+		},
+		{
+			"action": "accept",
+			"src":    ["autogroup:member"],
+			"dst":    ["tag:glm"],
+			"users":  ["root"],
+		},
+	],
+}

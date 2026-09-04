@@ -6,5 +6,5 @@ Suggested files (never commit):
 
 - `hf.token`
 - `runpod.env`
-- `tailscale.authkey`
+- `tailscale.authkey` — reusable, **not** ephemeral, tagged `tag:glm` (ADR-028)
 - `glm.api.key`

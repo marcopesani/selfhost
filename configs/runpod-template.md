@@ -53,4 +53,4 @@ Between sittings: **stop**, never delete. Deleting the Pod deletes the encrypted
 - **Restart (stop → start):** same Pod, same encrypted `/workspace`. `boot.sh` runs if you installed it.
 - **Recreate (new Pod from this template):** empty volume. Re-tick Encrypt volume. Re-pull weights.
 
-Reach the API with `ssh -L 8000:127.0.0.1:8000` (and `8428` for vmui). Never `*.proxy.runpod.net`.
+Reach the API with `ssh -L 18000:127.0.0.1:8000` (and `18428:127.0.0.1:8428` for vmui). Laptop clients use `:18000` so they do not steal local `:8000`. Never `*.proxy.runpod.net`.
