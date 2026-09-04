@@ -41,6 +41,45 @@ Collected 2026-09-02. Prefer these over memory.
 - Blackfrost DERISKED NVFP4: https://huggingface.co/Blackfrost-AI/GLM-5.3-Flash-DERISKED-NVFP4
 - drowzeys keys splice: https://huggingface.co/drowzeys/keys-GLM-5.3-Flash-NVFP4-ablit-l15-45-anchorstock
 - NOT Flash (753B): https://huggingface.co/dealignai/GLM-5.3-ABLITERATED-NVFP4
+- NOT Flash (753B cybersecurity CRACK, 8× H200 recipe): https://huggingface.co/dealignai/GLM-5.3-CYBERSECURITY-FP8
+- NOT Flash (753B NVFP4 size: ~433 GiB, 4× 96 GB does not fit): https://huggingface.co/LibertAIDAI/GLM-5.3-NVFP4
+- Heretic GGUF LoRA (abliteration only, 26% residual): https://huggingface.co/MorinoNushi/GLM-5.3-Flash-Heretic-LoRA-V1-GGUF
+- GLM-4.7-Flash cyber LoRA (wrong base): https://huggingface.co/neilopet/glm4-cybersec-v2-lora
+- Flash GLP-44 (gated steering, not LoRA): https://huggingface.co/msuiche/GLM-5.3-Flash-abliterated-cyber-GLP-44
+- mHC vs LoRA (lovesenko TR3 card): https://huggingface.co/lovesenko/GLM-5.3-Flash-tr3-4bpw-Abliterated
+- SGLang experimental NVFP4 MoE LoRA: https://github.com/sgl-project/sglang/pull/27329
+
+## Red-team research (this 4× / 1M pod)
+
+- Writeup: [`red-team.md`](red-team.md)
+- Z.ai GLM-5.3 (CyberGym / ExploitBench are **753B**): https://z.ai/blog/glm-5.3
+- Z.ai GLM-5.3-Flash (no CyberGym row; Toolathlon 78.4): https://z.ai/blog/glm-5.3-flash
+- Graphistry CyBT-CTF (GLM-5.2; harness > model): https://www.graphistry.com/blog/glm-5-2-cybersecurity-open-model
+- TrustedSec self-host offsec (workstation-size models): https://trustedsec.com/blog/benchmarking-self-hosted-llms-for-offensive-security
+- llm-stats Flash vs 5.3: https://llm-stats.com/models/compare/glm-5.3-vs-glm-5.3-flash
+- pi default tools: https://github.com/earendil-works/pi/blob/main/packages/coding-agent/README.md
+- pi models.json: https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/models.md
+- XPI (casefile / webxp / `/xp`): https://github.com/xaccefy/pi-xpi
+- XPI guide: https://github.com/xaccefy/pi-xpi/blob/main/docs/guide.md
+- OpenCode providers (laptop A/B only): https://opencode.ai/docs/providers/
+
+## In-pod devops
+
+- Writeup: [`ops.md`](ops.md)
+- SGLang `/health` orphan bug (do not loop it): https://github.com/sgl-project/sglang/issues/35884
+- VictoriaMetrics query API: https://docs.victoriametrics.com/victoriametrics/single-server-victoriametrics/
+- pi prompt templates: https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/prompt-templates.md
+- pi-debug-dashboard (rejected HTTP): https://github.com/ricoyudog/pi-debug-dashboard
+- Optional local pi-telemetry SQLite: https://www.npmjs.com/package/@spences10/pi-telemetry
+
+## Reseller pricing
+
+- Writeup: [`pricing.md`](pricing.md)
+- Our in-band rows: [`benchmark.md`](benchmark.md)
+- Pod dollars: [`../runpod/cost.md`](../runpod/cost.md)
+- Runpod storage (volume disk $0.10/GB-month running, $0.20 stopped): https://docs.runpod.io/pods/storage/types
+- Z.ai / OpenRouter GLM-5.3-Flash catalog (comp only, not our list): https://openrouter.ai/z-ai/glm-5.3-flash
+- Z.ai list vs promo writeup: https://codersera.com/blog/glm-5-3-flash-complete-guide-2026/
 
 ## Privacy / Runpod / Tailscale / confidential computing
 

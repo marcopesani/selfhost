@@ -106,6 +106,8 @@ python3 -m sglang.launch_server \
   --trust-remote-code
 ```
 
+Do not `--allow-auto-truncate`. Consumer decode defaults (65k omit-cap, 16k content reserve) live in [`sglang-boot.sh`](../configs/sglang-boot.sh) + ADR-023.
+
 **Config A — 200k on 2×.** Same command with `--tp-size 2`, `--context-length 204800`, `--max-total-tokens 204800`, no `--mem-fraction-static` unless OOM, and DFLASH instead of NEXTN:
 
 ```text

@@ -2,6 +2,184 @@
 
 Append-only. Newest first. Reverse a decision by adding a new ADR that supersedes the old one.
 
+## ADR-026 — Reseller list is GPU-second cost + 20% on this boot’s measured rates
+
+**Date:** 2026-09-04
+**Status:** accepted
+**Qualifies:** ADR-007 (208 / 1004 are not the SLA), ADR-010 (CRACK, `reasoning_effort=max`), ADR-016 (provider-trusted), ADR-019 (one research stream), ADR-023 (consumer decode), ADR-025 (512k window)
+
+Resale of access to **this** serve is priced from **our** in-band GPU-seconds, not from Z.ai / OpenRouter GLM-5.3-Flash ($0.15 / $0.50 / $0.03 list) and not from 0xSero’s 208 tok/s MTP number. This image has no MTP (sglang#36599). DFLASH2 is CC BY-NC-ND — do not use it to cut the output price.
+
+**Busy-GPU list** (20% over fully-loaded $8.42/hr, rounded up):
+
+| Meter | List / MTok |
+| --- | ---: |
+| Input (cache miss) | **$0.35** |
+| Cached input | **$0.038** |
+| Output (incl. thinking) | **$47** |
+
+Rates behind the list: prefill **8,087 tok/s**, cache floor **75,000 tok/s**, decode **60.0 tok/s** (ADR-023 94k briefing). Thinking tokens are output. One 512k stream.
+
+Same 20% as a reserved seat: **$10.10/hr**. A shared always-on API that is not full uses the 70% occupancy list in [`refs/pricing.md`](refs/pricing.md) ($0.50 / $0.054 / $67). Do not match Z.ai on $/MTok — the product is uncensored 512k on a dedicated box.
+
+Rewrite this ADR if MTP serves, DFLASH is licensed for commercial use, or the GPU/storage rate changes. Math and worked checks: [`refs/pricing.md`](refs/pricing.md).
+
+## ADR-025 — This boot’s API max context is 512k, so usage can hit 100%
+
+**Date:** 2026-09-04
+**Status:** accepted
+**Supersedes:** ADR-024 (client-only 256k cap with a 1M pool)
+**Qualifies:** ADR-013 (200k or 1M menu), ADR-018 (config B was 1M native)
+
+The OpenAI/Anthropic/pi usage bar is `used / context_length`. Serving `--context-length 1048576` while the DSA indexer CUDA-OOMs at ~655k–825k means the bar never fills — the process dies first. That is dishonest UX.
+
+This 4× boot therefore **serves 512k**:
+
+- `--context-length 524288`
+- `--max-total-tokens 524288`
+- pi `contextWindow: 524288` (same file on laptop and pod)
+- Fill chunks stay 16384. Omit-cap stays 65536 (ADR-023).
+
+512×1024 = 524288 (divides 64/256 page sizes). It is above the 200k class, below the measured indexer cliff, and is the number a client should treat as **full**. Do not keep a 1M KV slab “just in case.” Do not advertise 1M. Do not use 256k as the API window.
+
+A later image that holds a 1M chat without dying may restore ADR-018’s 1048576 with a new ADR.
+
+## ADR-024 — Live chats and soaks cap at 256k on this boot; the pool stays 1M
+
+**Date:** 2026-09-04
+**Status:** superseded by ADR-025
+**Qualifies:** ADR-013 (serve 200k or 1M), ADR-018 (config B 1M pool)
+
+Misread. The 256k figure was a soak cap with the 1M pool left in place. Wrong lever: usage UX follows the API `context_length`, not a client-only budget. Keep as history.
+
+## ADR-023 — Consumer decode defaults: 65k omit-cap, reserve 16k for content, larger prefill
+
+**Date:** 2026-09-04
+**Status:** accepted
+**Qualifies:** ADR-015 (OpenAI/Anthropic wire, pi primary)
+
+Daily jobs on this serve must feel like ChatGPT/Claude, not a 1024-token bench. GLM-5.3 always thinks first; `glm45` keeps `content` empty until the think-end tag; thinking counts against `max_tokens`.
+
+Defaults:
+
+- Omitted `max_tokens` / `max_completion_tokens` → **65536**, not SamplingParams' 128 and not until-EOS / leftover 1M context.
+- Auto thinking budget = `max(0, max_new_tokens − 16384)` unless the client sets `custom_params.thinking_budget`. Pass `-1` to uncap think (still bounded by `max_tokens`).
+- Processor is `Glm53FlashThinkingBudgetLogitProcessor` (ids **154841/154842**). Do not use `Glm4MoeThinkingBudgetLogitProcessor` (4.5 ids).
+- `--max-prefill-tokens 131072`, `--chunked-prefill-size 16384`.
+- `--preferred-sampling-params '{"max_new_tokens":65536}'` as belt-and-suspenders.
+- `--enable-custom-logit-processor` (loopback + bearer is the trust boundary).
+- `--stream-response-default-include-usage`.
+- Do **not** `--allow-auto-truncate`. Do **not** default `reasoning_effort=low`. Do **not** send `enable_thinking=false`.
+
+Clients (pi): `maxTokens` 65536, `stream` true, `reasoning_effort=max`, read timeout ≥ 20 min. Explicit tiny `max_tokens` still wins — benches may clip.
+
+## ADR-022 — In-pod devops is a dumb snapshot plus a short pi ops skill, not another dashboard
+
+**Date:** 2026-09-04
+**Status:** accepted
+**Qualifies:** ADR-015 (vmui-only observability, pi primary)
+
+The pod must still diagnose itself when SGLang is **down**. That rules out any LLM-only ops agent as the primary harness. Two layers:
+
+1. **Dumb (always on).** `configs/ops-snapshot.sh` on a 60s loop writes `/workspace/ops/LATEST.md` (and `.json`) from `nvidia-smi`, `df`, listen-on-8000, process list, download tail. No `/health` loop (sglang#35884 orphans generation health checks). No `/get_server_info` (CVE-2026-15977). No ingest of `sglang.log` (startup line prints the API key).
+2. **LLM (only when the API is up).** A separate tmux window running the same earendil pi, skill `pod-ops`, prompt `/ops`. Short prompts. It reads `LATEST.md`, curls `http://127.0.0.1:8428/api/v1/query` and `http://127.0.0.1:8000/metrics`, writes `/workspace/ops/reports/`. It does **not** share the research XPI session and does not `/xp swarm`.
+
+**Report to human** is files on the encrypted volume + SSH, not chat SaaS:
+
+- `ssh … cat /workspace/ops/LATEST.md` (works when the model is dead)
+- optional login banner / tmux status pointing at that file
+- narrative reports under `/workspace/ops/reports/` when pi is up
+
+Do not Slack, email, Discord, Datadog, Langfuse, Phoenix, or any webhook from this guest.
+
+**Self-heal:** snapshot and diagnose are on by default. **Auto-restart of SGLang is off** unless `/workspace/ops/AUTO_RESTART` exists. A 4× cold boot is many minutes and $8.36/hr; a restart loop is a billable footgun. Restarting SGLang also kills the in-pod pi mid-turn. Exporters/vmui may be restarted by the ops skill; SGLang restart is human (or the flag file).
+
+Do **not** install HTTP ops UIs on this guest: Grafana (already ADR-015), `pi-debug-dashboard` (:9848), `pi-hub`, `disler/pi-agent-observability`, Netdata. They want browsers and extra `-L` ports. Human graphs stay vmui `:8428`. Optional local-only `@spences10/pi-telemetry` SQLite is allowed for *agent* turn stats; keep the db under `/workspace/ops/` and do not export it off-box.
+
+Operator copy stays local (`configs/ops-harness.md`, gitignored). Catalog: [`refs/ops.md`](refs/ops.md).
+
+## ADR-021 — Red-team harness is a local XPI slice on pi, not a pentest distro
+
+**Date:** 2026-09-04
+**Status:** accepted
+**Qualifies:** ADR-015 (pi primary), ADR-019 (not a scanner image)
+
+The specialized open red-team harness for *this* serve is **pi + a local-only XPI slice**, not a new agent.
+
+Install on laptop and pod:
+
+- `@xaccefy/pi-casefile` — hypothesis → investigating → confirmed ledger, two-phase PoC gates, coverage matrix, `ChainSuggest`
+- `@xaccefy/pi-xtodo` — task lists that survive compaction
+- `ast-grep` already on `/workspace` (ADR-019) — XPI’s `ast_grep` tool if the casefile package registers it; otherwise bash to the same binary
+
+Run **`/xp lite`** (`PI_XP_MODE=lite`). Ledger: `PI_CASEFILE_PATH=/workspace/findings/casefile.db`. `PI_OFFLINE=1` stays.
+
+Do **not** install the umbrella `@xaccefy/pi-xpi` or `@xaccefy/pi-webxp`. Those pull `open-websearch`, `web_search` / `web_fetch` / `context7` / `deepwiki`, and `exploit_search` against [preview.is](https://preview.is) (`PREVIEW_IS_API_KEY`). Queries and target names leave the guest. Do not set `PREVIEW_IS_API_KEY`.
+
+Do **not** default `/xp swarm` (auditor / tracer / skeptic / chain). This SKU is one 1M stream; four subagents share the same GPUs and multiply the sglang#36669 thinking-degeneration risk. Swarm is an opt-in later, still without webxp.
+
+Do **not** install `soulofzephir/pi-skill-pentesting` or switch the binary to `shantanu561993/omp-cyberstrike` (OMP fork, 143 web-pentest skills). Payload / header-scan shaped; would replace or overload earendil pi.
+
+PoC network flags stay unset on the inference guest (`PI_POC_ALLOW_NETWORK`, `PI_POC_ALLOW_PRIVATE_REPLAY`). Live replay against an authorized lab belongs on a machine the operator already controls.
+
+Rejected as the *primary* in-pod harness (they can live on a separate lab host talking through `ssh -L` if the operator wants them later):
+
+| Harness | Why not here |
+| --- | --- |
+| CAI (`aliasrobotics/cai`) | LiteLLM adapter (ADR-015), Phoenix traces, ships recon/exploit tools |
+| Strix, PentAGI, T3MP3ST, Decepticon | Autonomous pentest / Kali / arsenal images — scanner distro beside weights |
+| PentestGPT | Autonomous path drives Claude Code / Codex; methodology, not a 1M repo agent |
+| OpenCode | Graphistry’s *open* CyBT baseline with GLM; can point at `127.0.0.1:8000`. Optional laptop A/B only — not a second in-pod brain |
+| Louie | Proprietary Graphistry Hub; not an open drop-in |
+
+Operator copy stays local (`configs/research-harness.md`, gitignored). Catalog: [`refs/red-team.md`](refs/red-team.md).
+
+## ADR-020 — Do not attach a LoRA on this Flash NVFP4 serve
+
+**Date:** 2026-09-04
+**Status:** accepted
+**Qualifies:** ADR-010 (weights), ADR-004 (SGLang+NVFP4), ADR-019 (research harness)
+
+No LoRA is loaded at boot. Do not `--enable-lora`, do not merge an adapter into the NVFP4 shards, do not train one on this pod while it is the inference box.
+
+Catalog (HF 2026-09-04): **zero** PEFT adapters tagged for `zai-org/GLM-5.3-Flash`. The only Flash-named “LoRA” is `MorinoNushi/GLM-5.3-Flash-Heretic-LoRA-V1-GGUF` — a **rank-1 GGUF abliteration** for llama.cpp, trial 8 of an unfinished Optuna study, harmful-refusal **26.4%** vs base 95%. That is worse than the already-pinned CRACK (HarmBench-320 **0%** at max) and is the wrong engine.
+
+Cyber LoRAs that *do* exist (`neilopet/glm4-cybersec-v2-lora` on GLM-**4.7**-Flash 30B; xOffense on **Qwen3-32B**) are different architectures. They cannot be applied to `glm5_next`.
+
+Even a hypothetical Flash-native cyber SFT LoRA would be rejected on this SKU until measured otherwise:
+
+- **mHC** (Manifold-Constrained Hyper-Connections) re-normalizes low-rank residual perturbations. Abliteration authors (lovesenko TR3 card; dealignai CRACK) edit `o_proj` in weight space *because LoRA-style edits produce near-zero behavioral change* on this arch.
+- Our SM120 recipe is TileLang DSA + `flashinfer_cutlass`. SGLang’s NVFP4 MoE LoRA path is experimental and wants `--moe-runner-backend experimental_sgl_trtllm` — the SM120 TRT-LLM footgun (sglang#37105). Published LoRA-on-NVFP4 MoE recover ~65% of no-LoRA throughput.
+- DFLASH2 / cracked MTP are calibrated to the unadapted target. An adapter on the target without a matching draft collapses spec.
+- Training our own would need the BF16 (~650 GB) or a QLoRA path, occupy the billable 4× box, then a merge/requant that is not the pinned digest.
+
+`msuiche/GLM-5.3-Flash-abliterated-cyber-GLP-44` is a **GLP control vector**, not a LoRA; gated; 22 downloads. Same class of “don’t mix with CRACK” as the 753B GLP-77.
+
+The research upgrade stays ADR-019 (harness), not an adapter.
+
+## ADR-019 — This 4× pod is a Flash research agent, not a 753B cyber box or a scanner distro
+
+**Date:** 2026-09-04
+**Status:** accepted
+**Qualifies:** ADR-010 (weights), ADR-015 (pi), ADR-018 (config B)
+
+Workload on this pod is authorized security *research*: whole-repo review, vuln discovery from source, long-horizon agent loops. The best setup **on this SKU** is still **`dealignai/GLM-5.3-Flash-UNCENSORED-NVFP4`** at 1M. Do not swap the primary checkpoint for GLM-5.3 753B, for `dealignai/GLM-5.3-CYBERSECURITY-FP8`, for DeepSeek V4 Flash, or for 35B cyber LoRAs.
+
+Reasons that are not going to change without a new SKU or a new measurement:
+
+- CyberGym 84.5% / ExploitBench 54.4% are **753B**, vendor-reported. Flash has no published CyberGym. 753B NVFP4 is ~433 GiB; 4× 96 GB is 384 GB. The cybersecurity CRACK’s published recipe is 8× H200 @ 131k.
+- Flash Toolathlon **78.4** vs 753B **73.0**. This box is the better published tool-caller of the two GLM-5.3 sizes, and it keeps vision.
+- Graphistry CyBT-CTF (GLM-5.2): harness moved the score more than GLM vs Opus. The upgrade on *this* pod is the harness.
+
+Harness bindings (local operator copy `configs/research-harness.md`, gitignored):
+
+- pi (ADR-015) with `read` / `write` / `edit` / `bash` only as native tools. Extra capability is local CLIs on `/workspace` (git, ripgrep, fd, ast-grep, jq, sqlite3, uv, semgrep) plus an offline KB (`CWE` / ATT&CK STIX / optional NVD JSON).
+- No cloud MCP. No Cursor. No HTTP ports.
+- This image is **not** a scanner / C2 distro. Network-offensive tooling for authorized labs stays on a machine the operator already controls — not beside weights, prompts, and `GLM_API_KEY`.
+- `reasoning_effort=max`. Temperature ≥ ~1 for tool calls. First-sitting smoke includes a multi-tool pi session (sglang#36669) and a long in-band ingest.
+
+If CyberGym-class 753B is required later: write a new ADR and provision **8× RTX PRO 6000** or **8× H200**. EXL3 ~3 bpw of 753B on 4× is rejected here — it abandons the SGLang 1M speed track.
+
 ## ADR-018 — Config B is binding: 1M native window on 4× RTX PRO 6000
 
 **Date:** 2026-09-04

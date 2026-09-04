@@ -9,6 +9,26 @@ secrets/*
 logs/*
 !logs/.gitkeep
 
+**/__pycache__/
+*.pyc
+
+# Live SSH endpoints / pod ids. Copy from inventory.md.
+runpod/inventory.local.md
+
+# Sitting notes often contain live IDs. Decisions go in DECISIONS.md / refs/.
+sessions/*
+!sessions/_template.md
+
+# One-off soak tester (hard-codes the SSH endpoint)
+scripts/longchat-1m-saturate.py
+
+# In-pod harness copies (ADR-021/022). Local operator files; catalog is refs/.
+configs/ops-harness.md
+configs/ops-snapshot.sh
+configs/research-harness.md
+configs/pi-skills/
+configs/prompts/
+
 .firecrawl/
 .herenow/
 .DS_Store

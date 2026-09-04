@@ -11,14 +11,15 @@ previous recipe used a **64k** pool. Neither is a serve target. Prefill of a
 real 200k/1M prompt is the workload; a sub-200k pool throws most of the model
 away.
 
-Two legal windows:
+Two legal SKU windows (ADR-013), plus **this boot’s honest API window** (ADR-025):
 
 | Band | Flag | Why this number |
 | --- | ---: | --- |
 | **200k** | `--context-length 204800` | 200×1024, divides 64/256 page sizes (`200000` does not). Same class as published 229k–262k 2× runs. |
-| **1M** | `--context-length 1048576` | Native `max_position_embeddings`. |
+| **512k (this 4× boot)** | `--context-length 524288` | Half of native 1M. Below the DSA-indexer OOM cliff (~655k–825k). Clients can fill the bar to 100% without killing SGLang. |
+| **1M** | `--context-length 1048576` | Native `max_position_embeddings`. Do not serve on this image until a chat holds it. |
 
-Do not add a third band. `262144` (rtx6kpro’s `MAX_MODEL_LEN`) is the 200k class with more concurrency, not a different product.
+ADR-013 said not to add a third band. ADR-025 does, for usage UX: advertising 1M while the process dies at ~825k makes the usage meter a lie.
 
 ## Architecture that makes long ctx cheap
 

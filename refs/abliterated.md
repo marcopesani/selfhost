@@ -68,10 +68,13 @@ More likes than dealignai. Worse for "I want it to just answer." Do not pick thi
 | Repo | Why |
 | --- | --- |
 | `dealignai/GLM-5.3-ABLITERATED-NVFP4` (no "Flash") | **753B GLM-5.3**, different model |
+| `dealignai/GLM-5.3-CYBERSECURITY-FP8` | Same 753B family; 8× H200 @ 131k in their recipe — see [`red-team.md`](red-team.md) |
+| `msuiche/GLM-5.3-Flash-abliterated-cyber-GLP-44` | Gated **GLP steering** for Flash, not a LoRA. Do not mix with CRACK (ADR-020) |
+| `msuiche/…-cyber-GLP-77` | Steering vector for **753B**, not Flash |
+| `MorinoNushi/GLM-5.3-Flash-Heretic-LoRA-V1-GGUF` | Rank-1 llama.cpp abliteration; 26% residual. Not SGLang, not cyber SFT |
 | Random FP8/NVFP4/W4A16 mirrors (`AIAgens`, `0xSojalSec`, `nuottroisaoduoc`, …) | Reuploads, no evals |
 | `rbinrs/GLM-5.3-Flash-ABLITERATED-NVFP4` | Stale pre-08-29 loop-fix mirror |
 | `orcarouter` GGUF/MLX/EXL3 requants | Wrong engine for the tok/s goal |
-| `msuiche/…-cyber-GLP-44` | Gated, specialized, 19 downloads |
 | `grant-ai` MLX 4bit | Mac path; derived from Blackfrost |
 | Stock `zai-org/GLM-5.3-Flash` | Heavy over-refusal (the problem) |
 
